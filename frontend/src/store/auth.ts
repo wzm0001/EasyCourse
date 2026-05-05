@@ -6,7 +6,7 @@ interface AuthState {
   token: string | null;
   user: UserInfo | null;
   isAuthenticated: boolean;
-  login: (data: LoginRequest) => Promise<void>;
+  login: (data: LoginRequest, remember?: boolean) => Promise<void>;
   logout: () => void;
   setUser: (user: UserInfo) => void;
   loadFromStorage: () => void;
@@ -17,12 +17,18 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
 
-  login: async (data: LoginRequest) => {
+  login: async (data: LoginRequest, remember: boolean = false) => {
     const response = await api.post<LoginResponse>('/auth/login', data);
     const result = response.data as any;
     const { access_token, user } = result.data || result;
-    localStorage.setItem('token', access_token);
-    localStorage.setItem('user', JSON.stringify(user));
+    const storage = remember ? localStorage : sessionStorage;
+    storage.setItem('token', access_token);
+    storage.setItem('user', JSON.stringify(user));
+    if (remember) {
+      localStorage.setItem('remember', 'true');
+    } else {
+      localStorage.removeItem('remember');
+    }
     set({
       token: access_token,
       user,
@@ -33,6 +39,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('remember');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     set({
       token: null,
       user: null,
@@ -41,13 +50,17 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   setUser: (user: UserInfo) => {
-    localStorage.setItem('user', JSON.stringify(user));
+    const remember = localStorage.getItem('remember') === 'true';
+    const storage = remember ? localStorage : sessionStorage;
+    storage.setItem('user', JSON.stringify(user));
     set({ user });
   },
 
   loadFromStorage: () => {
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
+    const remember = localStorage.getItem('remember') === 'true';
+    const storage = remember ? localStorage : sessionStorage;
+    const token = storage.getItem('token');
+    const userStr = storage.getItem('user');
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr) as UserInfo;
@@ -59,6 +72,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       } catch {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
       }
     }
   },

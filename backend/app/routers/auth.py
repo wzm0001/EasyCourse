@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.user import User, UserRole, AccountStatus
 from app.schemas.common import APIResponse
-from app.schemas.user import LoginRequest, LoginResponse, UserInfo, SchoolCreate, ChangePasswordRequest
+from app.schemas.user import LoginRequest, LoginResponse, UserInfo, SchoolCreate, ChangePasswordRequest, VerifyIdentityRequest, ResetPasswordRequest
 from app.services.auth import authenticate_user, create_access_token, validate_password_strength
 from app.services.user import register_school, change_password
 from app.repositories.user import UserRepository, SchoolRepository
@@ -128,3 +128,41 @@ async def change_password_endpoint(
             detail="原密码错误",
         )
     return APIResponse.success(message="密码修改成功")
+
+
+@router.post("/verify-identity", response_model=APIResponse)
+async def verify_identity(request: VerifyIdentityRequest, db: AsyncSession = Depends(get_db)):
+    user_repo = UserRepository(db)
+    user = await user_repo.get_by_username(request.username)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="用户不存在",
+        )
+    if user.phone != request.phone:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="手机号与注册信息不匹配",
+        )
+    return APIResponse.success(data={"verified": True})
+
+
+@router.put("/reset-password", response_model=APIResponse)
+async def reset_password(request: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+    if not validate_password_strength(request.new_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="密码强度不足：至少8位，需包含大小写字母和数字",
+        )
+    user_repo = UserRepository(db)
+    user = await user_repo.get_by_username(request.username)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="用户不存在",
+        )
+    from app.services.auth import get_password_hash
+    user.password_hash = get_password_hash(request.new_password)
+    user.current_token = ""
+    await db.flush()
+    return APIResponse.success(message="密码重置成功")

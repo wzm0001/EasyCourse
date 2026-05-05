@@ -111,4 +111,10 @@ class UserStatusUpdate(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
+    username: str
     new_password: str
+
+
+class VerifyIdentityRequest(BaseModel):
+    username: str
+    phone: str
