@@ -134,7 +134,7 @@ export default function Schedule() {
           </Space>
         ),
         okText: '关闭',
-        cancelText: null,
+        cancelText: undefined,
       });
     } else if (swapSource) {
       handleSwap(periodKey, dayKey);

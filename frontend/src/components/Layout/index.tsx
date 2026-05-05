@@ -42,7 +42,7 @@ export default function MainLayout() {
             borderBottom: `1px solid ${theme === 'dark' ? '#303030' : '#f0f0f0'}`,
           }}
         >
-          {sidebarCollapsed ? 'SC' : 'ScheduleCraft'}
+          {sidebarCollapsed ? '排课' : '智能排课系统'}
         </div>
         <Sidebar />
       </Sider>

@@ -12,10 +12,10 @@ export default function Login() {
   const handleSubmit = async (values: LoginRequest) => {
     try {
       await login(values);
-      message.success('Login successful');
+      message.success('登录成功');
       navigate('/dashboard');
     } catch {
-      message.error('Login failed, please check your credentials');
+      message.error('登录失败，请检查用户名和密码');
     }
   };
 
@@ -50,10 +50,10 @@ export default function Login() {
               marginBottom: 8,
             }}
           >
-            ScheduleCraft
+            智能排课系统
           </h1>
           <p style={{ color: '#666', fontSize: 14 }}>
-            Class Scheduling System
+            中小学走班排课系统
           </p>
         </div>
 
@@ -65,21 +65,21 @@ export default function Login() {
         >
           <Form.Item
             name="username"
-            rules={[{ required: true, message: 'Please enter your username' }]}
+            rules={[{ required: true, message: '请输入用户名' }]}
           >
             <Input
               prefix={<UserOutlined />}
-              placeholder="Username"
+              placeholder="用户名"
             />
           </Form.Item>
 
           <Form.Item
             name="password"
-            rules={[{ required: true, message: 'Please enter your password' }]}
+            rules={[{ required: true, message: '请输入密码' }]}
           >
             <Input.Password
               prefix={<LockOutlined />}
-              placeholder="Password"
+              placeholder="密码"
             />
           </Form.Item>
 
@@ -90,7 +90,7 @@ export default function Login() {
               block
               style={{ height: 44, borderRadius: 8 }}
             >
-              Sign In
+              登录
             </Button>
           </Form.Item>
         </Form>

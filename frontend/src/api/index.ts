@@ -33,16 +33,16 @@ api.interceptors.response.use(
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/login';
-        message.error('Login expired, please login again');
+        message.error('登录已过期，请重新登录');
         break;
       case 403:
-        message.error('No permission to access');
+        message.error('没有权限访问');
         break;
       case 500:
-        message.error('Server error, please try again later');
+        message.error('服务器错误，请稍后重试');
         break;
       default:
-        message.error(error.response?.data?.message || 'Request failed');
+        message.error(error.response?.data?.message || '请求失败');
     }
     return Promise.reject(error);
   }

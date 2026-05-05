@@ -12,25 +12,25 @@ import dayjs from 'dayjs';
 const { Title, Text } = Typography;
 
 const roleLabels: Record<string, { label: string; color: string }> = {
-  [UserRole.SUPER_ADMIN]: { label: 'Super Admin', color: 'red' },
-  [UserRole.SCHOOL_ADMIN]: { label: 'School Admin', color: 'blue' },
-  [UserRole.TEACHER]: { label: 'Teacher', color: 'green' },
+  [UserRole.SUPER_ADMIN]: { label: '超级管理员', color: 'red' },
+  [UserRole.SCHOOL_ADMIN]: { label: '学校管理员', color: 'blue' },
+  [UserRole.TEACHER]: { label: '教师', color: 'green' },
 };
 
 export default function Dashboard() {
   const user = useAuthStore((s) => s.user);
-  const roleInfo = user ? roleLabels[user.role] || { label: 'Unknown', color: 'default' } : { label: 'Unknown', color: 'default' };
+  const roleInfo = user ? roleLabels[user.role] || { label: '未知', color: 'default' } : { label: '未知', color: 'default' };
 
   return (
     <div>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <div>
           <Title level={4} style={{ marginBottom: 4 }}>
-            Welcome, {user?.real_name || user?.username || 'User'}
+            欢迎，{user?.real_name || user?.username || '用户'}
           </Title>
           <Space>
             <Text type="secondary">
-              {dayjs().format('dddd, MMMM D, YYYY')}
+              {dayjs().format('YYYY年MM月DD日 dddd')}
             </Text>
             <Tag color={roleInfo.color}>{roleInfo.label}</Tag>
             {user?.school_name && <Tag>{user.school_name}</Tag>}
@@ -41,7 +41,7 @@ export default function Dashboard() {
           <Col xs={24} sm={12} lg={6}>
             <Card>
               <Statistic
-                title="Total Teachers"
+                title="教师总数"
                 value={0}
                 prefix={<UserOutlined />}
               />
@@ -50,7 +50,7 @@ export default function Dashboard() {
           <Col xs={24} sm={12} lg={6}>
             <Card>
               <Statistic
-                title="Total Classes"
+                title="班级总数"
                 value={0}
                 prefix={<TeamOutlined />}
               />
@@ -59,7 +59,7 @@ export default function Dashboard() {
           <Col xs={24} sm={12} lg={6}>
             <Card>
               <Statistic
-                title="Schedules"
+                title="排课数量"
                 value={0}
                 prefix={<ScheduleOutlined />}
               />
@@ -68,7 +68,7 @@ export default function Dashboard() {
           <Col xs={24} sm={12} lg={6}>
             <Card>
               <Statistic
-                title="Schools"
+                title="学校数量"
                 value={0}
                 prefix={<ShopOutlined />}
               />
@@ -76,10 +76,9 @@ export default function Dashboard() {
           </Col>
         </Row>
 
-        <Card title="System Overview">
+        <Card title="系统概览">
           <Text type="secondary">
-            This is the class scheduling system dashboard. Use the sidebar to navigate to different
-            modules for managing schools, teachers, classes, and generating schedules.
+            这是智能排课系统仪表盘。使用左侧菜单导航到不同模块，管理学校、教师、班级和生成课表。
           </Text>
         </Card>
       </Space>
