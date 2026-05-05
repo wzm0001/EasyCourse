@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, String, func
+from sqlalchemy import DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -17,12 +17,10 @@ class BaseModel(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=func.utcnow(),
-        server_default=func.utcnow(),
+        default=lambda: datetime.now(timezone.utc),
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=func.utcnow(),
-        onupdate=func.utcnow(),
-        server_default=func.utcnow(),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
