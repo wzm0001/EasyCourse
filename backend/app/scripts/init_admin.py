@@ -35,6 +35,7 @@ async def create_super_admin(
             is_active=True,
         )
         admin = await user_repo.create(admin)
+        await db.commit()
         print(f"超级管理员创建成功！")
         print(f"  用户名: {username}")
         print(f"  密码: {password}")
