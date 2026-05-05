@@ -19,6 +19,7 @@ class UserInfo(BaseModel):
     phone: str = ""
     email: str = ""
     is_active: bool = True
+    created_by: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -35,6 +36,10 @@ class SchoolCreate(BaseModel):
     address: str = ""
     contact_person: str = ""
     contact_phone: str = ""
+    school_type: str = "middle"
+    province: str = ""
+    city: str = ""
+    district: str = ""
 
 
 class SchoolUpdate(BaseModel):
@@ -42,6 +47,10 @@ class SchoolUpdate(BaseModel):
     address: Optional[str] = None
     contact_person: Optional[str] = None
     contact_phone: Optional[str] = None
+    school_type: Optional[str] = None
+    province: Optional[str] = None
+    city: Optional[str] = None
+    district: Optional[str] = None
 
 
 class SchoolInfo(BaseModel):
@@ -53,8 +62,21 @@ class SchoolInfo(BaseModel):
     contact_phone: str = ""
     status: AccountStatus
     created_at: datetime
+    school_type: str = "middle"
+    province: str = ""
+    city: str = ""
+    district: str = ""
 
     model_config = {"from_attributes": True}
+
+
+class SchoolDetailInfo(SchoolInfo):
+    admin_username: str = ""
+    admin_real_name: str = ""
+    admin_phone: str = ""
+    admin_is_active: bool = True
+    admin_email: str = ""
+    user_count: int = 0
 
 
 class UserCreate(BaseModel):
@@ -75,6 +97,14 @@ class UserUpdate(BaseModel):
 
 
 class TeacherCreate(BaseModel):
+    username: str
+    password: str
+    real_name: str = ""
+    phone: str = ""
+    email: str = ""
+
+
+class AdminCreateRequest(BaseModel):
     username: str
     password: str
     real_name: str = ""

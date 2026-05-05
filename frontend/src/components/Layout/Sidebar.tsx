@@ -44,7 +44,7 @@ const superAdminMenus: MenuProps['items'] = [
   {
     key: '/users',
     icon: <UserSwitchOutlined />,
-    label: '用户管理',
+    label: '管理员用户管理',
   },
   {
     key: '/logs',

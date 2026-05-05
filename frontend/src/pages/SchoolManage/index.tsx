@@ -1,10 +1,24 @@
-import { Card, Button, Space, message, Popconfirm } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Card, Button, Space, Tag, message, Popconfirm } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { useState, useRef } from 'react';
-import { getSchools, deleteSchool } from '@/api/schools';
+import { getSchools, deleteSchool, approveSchool } from '@/api/schools';
 import SchoolForm from './SchoolForm';
+
+const statusColorMap: Record<string, string> = {
+  pending: 'orange',
+  active: 'green',
+  rejected: 'red',
+  disabled: 'default',
+};
+
+const statusTextMap: Record<string, string> = {
+  pending: '待审批',
+  active: '已审批',
+  rejected: '已拒绝',
+  disabled: '已禁用',
+};
 
 export default function SchoolManage() {
   const [formOpen, setFormOpen] = useState(false);
@@ -16,8 +30,9 @@ export default function SchoolManage() {
     { title: '学校编码', dataIndex: 'code', width: 120 },
     {
       title: '学校类型',
-      dataIndex: 'type',
+      dataIndex: 'school_type',
       width: 120,
+      search: false,
       valueEnum: {
         primary: { text: '小学' },
         middle: { text: '初中' },
@@ -28,23 +43,41 @@ export default function SchoolManage() {
     },
     { title: '省份', dataIndex: 'province', width: 80, search: false },
     { title: '城市', dataIndex: 'city', width: 80, search: false },
-    { title: '联系人', dataIndex: 'contact_name', width: 100, search: false },
+    { title: '区县', dataIndex: 'district', width: 80, search: false },
+    { title: '详细地址', dataIndex: 'address', width: 150, search: false, ellipsis: true },
+    { title: '联系人', dataIndex: 'contact_person', width: 100, search: false },
     { title: '联系电话', dataIndex: 'contact_phone', width: 130, search: false },
+    { title: '管理员账号', dataIndex: 'admin_username', width: 120, search: false },
     {
-      title: '状态',
+      title: '管理员状态',
+      dataIndex: 'admin_is_active',
+      width: 100,
+      search: false,
+      render: (_, record) => (
+        <Tag color={record.admin_is_active ? 'success' : 'default'}>
+          {record.admin_is_active ? '启用' : '禁用'}
+        </Tag>
+      ),
+    },
+    {
+      title: '学校状态',
       dataIndex: 'status',
       width: 100,
       valueEnum: {
         pending: { text: '待审批', status: 'Warning' },
-        approved: { text: '已审批', status: 'Success' },
+        active: { text: '已审批', status: 'Success' },
         rejected: { text: '已拒绝', status: 'Error' },
         disabled: { text: '已禁用', status: 'Default' },
       },
+      render: (_, record) => (
+        <Tag color={statusColorMap[record.status]}>{statusTextMap[record.status]}</Tag>
+      ),
     },
+    { title: '用户数', dataIndex: 'user_count', width: 80, search: false },
     {
       title: '操作',
       valueType: 'option',
-      width: 150,
+      width: 200,
       render: (_, record) => (
         <Space>
           <Button
@@ -58,6 +91,24 @@ export default function SchoolManage() {
           >
             编辑
           </Button>
+          {record.status === 'pending' && (
+            <Popconfirm
+              title="确定审批通过该学校吗？"
+              onConfirm={async () => {
+                try {
+                  await approveSchool(record.id);
+                  message.success('审批成功');
+                  actionRef.current?.reload();
+                } catch {
+                  message.error('审批失败');
+                }
+              }}
+            >
+              <Button type="link" size="small" icon={<CheckOutlined />}>
+                审批
+              </Button>
+            </Popconfirm>
+          )}
           <Popconfirm
             title="确定删除该学校吗？"
             onConfirm={async () => {
@@ -90,7 +141,6 @@ export default function SchoolManage() {
             page_size: params.pageSize || 10,
             name: params.name,
             code: params.code,
-            type: params.type,
             status: params.status,
           });
           return {

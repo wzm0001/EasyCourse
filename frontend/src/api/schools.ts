@@ -22,11 +22,11 @@ export function getPendingSchools(params: PageRequest & Record<string, any>) {
 }
 
 export function approveSchool(id: string) {
-  return put<any>(`/schools/${id}/approve`);
+  return post<any>(`/schools/${id}/approve`);
 }
 
 export function rejectSchool(id: string, reason?: string) {
-  return put<any>(`/schools/${id}/reject`, { reason });
+  return post<any>(`/schools/${id}/reject`, { reason });
 }
 
 export function deleteSchool(id: string) {

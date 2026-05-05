@@ -27,6 +27,10 @@ class School(BaseModel):
     contact_phone: Mapped[str] = mapped_column(String(20), default="")
     status: Mapped[AccountStatus] = mapped_column(Enum(AccountStatus), default=AccountStatus.PENDING)
     reject_reason: Mapped[str] = mapped_column(Text, default="")
+    school_type: Mapped[str] = mapped_column(String(50), default="middle")
+    province: Mapped[str] = mapped_column(String(100), default="")
+    city: Mapped[str] = mapped_column(String(100), default="")
+    district: Mapped[str] = mapped_column(String(100), default="")
 
     users: Mapped[list["User"]] = relationship("User", back_populates="school")
 
@@ -43,8 +47,10 @@ class User(BaseModel):
     email: Mapped[str] = mapped_column(String(200), default="")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     current_token: Mapped[str] = mapped_column(String(500), default="")
+    created_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
 
     school: Mapped[School | None] = relationship("School", back_populates="users")
+    creator: Mapped["User | None"] = relationship("User", foreign_keys=[created_by])
 
 
 class ApprovalRecord(BaseModel):

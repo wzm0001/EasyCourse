@@ -29,6 +29,26 @@ class UserRepository(BaseRepository[User]):
         items = list(result.scalars().all())
         return items, total
 
+    async def get_admin_users(self, created_by: str, page: int = 1, page_size: int = 20) -> tuple[List[User], int]:
+        from sqlalchemy import func
+        from app.models.user import UserRole
+        count_result = await self.session.execute(
+            select(func.count()).select_from(User).where(
+                User.role == UserRole.SUPER_ADMIN,
+                User.created_by == created_by,
+            )
+        )
+        total = count_result.scalar_one()
+        offset = (page - 1) * page_size
+        result = await self.session.execute(
+            select(User).where(
+                User.role == UserRole.SUPER_ADMIN,
+                User.created_by == created_by,
+            ).offset(offset).limit(page_size)
+        )
+        items = list(result.scalars().all())
+        return items, total
+
 
 class SchoolRepository(BaseRepository[School]):
     def __init__(self, session: AsyncSession):

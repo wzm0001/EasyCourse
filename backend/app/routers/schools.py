@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.user import User, UserRole, AccountStatus, School
 from app.schemas.common import APIResponse, PageResponse
-from app.schemas.user import SchoolInfo, SchoolUpdate, ApprovalAction
+from app.schemas.user import SchoolInfo, SchoolUpdate, ApprovalAction, SchoolDetailInfo
 from app.repositories.user import SchoolRepository, UserRepository, ApprovalRepository
 from app.services.user import approve_school, reject_school, request_data_change
 from app.middleware.auth import require_super_admin, require_role, get_current_user_dependency
@@ -12,7 +12,32 @@ from app.middleware.auth import require_super_admin, require_role, get_current_u
 router = APIRouter(prefix="/schools", tags=["学校管理"])
 
 
-@router.get("", response_model=APIResponse[PageResponse[SchoolInfo]])
+async def _get_school_admin_info(school_id: str, user_repo: UserRepository, db: AsyncSession) -> dict:
+    from sqlalchemy import select
+    result = await db.execute(
+        select(User).where(User.school_id == school_id, User.role == UserRole.SCHOOL_ADMIN)
+    )
+    admin = result.scalar_one_or_none()
+    if admin is None:
+        return {}
+    return {
+        "admin_username": admin.username,
+        "admin_real_name": admin.real_name,
+        "admin_phone": admin.phone,
+        "admin_is_active": admin.is_active,
+        "admin_email": admin.email,
+    }
+
+
+async def _get_school_user_count(school_id: str, db: AsyncSession) -> int:
+    from sqlalchemy import select, func
+    result = await db.execute(
+        select(func.count()).select_from(User).where(User.school_id == school_id)
+    )
+    return result.scalar_one()
+
+
+@router.get("", response_model=APIResponse[PageResponse[SchoolDetailInfo]])
 async def get_schools(
     page: int = 1,
     page_size: int = 20,
@@ -20,9 +45,13 @@ async def get_schools(
     db: AsyncSession = Depends(get_db),
 ):
     school_repo = SchoolRepository(db)
+    user_repo = UserRepository(db)
     schools, total = await school_repo.get_all(page=page, page_size=page_size)
-    items = [
-        SchoolInfo(
+    items = []
+    for s in schools:
+        admin_info = await _get_school_admin_info(s.id, user_repo, db)
+        user_count = await _get_school_user_count(s.id, db)
+        items.append(SchoolDetailInfo(
             id=s.id,
             name=s.name,
             code=s.code,
@@ -31,13 +60,21 @@ async def get_schools(
             contact_phone=s.contact_phone,
             status=s.status,
             created_at=s.created_at,
-        )
-        for s in schools
-    ]
+            school_type=s.school_type,
+            province=s.province,
+            city=s.city,
+            district=s.district,
+            admin_username=admin_info.get("admin_username", ""),
+            admin_real_name=admin_info.get("admin_real_name", ""),
+            admin_phone=admin_info.get("admin_phone", ""),
+            admin_is_active=admin_info.get("admin_is_active", True),
+            admin_email=admin_info.get("admin_email", ""),
+            user_count=user_count,
+        ))
     return APIResponse.success(data=PageResponse(items=items, total=total, page=page, page_size=page_size))
 
 
-@router.get("/pending", response_model=APIResponse[PageResponse[SchoolInfo]])
+@router.get("/pending", response_model=APIResponse[PageResponse[SchoolDetailInfo]])
 async def get_pending_schools(
     page: int = 1,
     page_size: int = 20,
@@ -45,6 +82,7 @@ async def get_pending_schools(
     db: AsyncSession = Depends(get_db),
 ):
     school_repo = SchoolRepository(db)
+    user_repo = UserRepository(db)
     from sqlalchemy import select, func
     count_result = await db.execute(
         select(func.count()).select_from(School).where(School.status == AccountStatus.PENDING)
@@ -55,8 +93,11 @@ async def get_pending_schools(
         select(School).where(School.status == AccountStatus.PENDING).offset(offset).limit(page_size)
     )
     schools = list(result.scalars().all())
-    items = [
-        SchoolInfo(
+    items = []
+    for s in schools:
+        admin_info = await _get_school_admin_info(s.id, user_repo, db)
+        user_count = await _get_school_user_count(s.id, db)
+        items.append(SchoolDetailInfo(
             id=s.id,
             name=s.name,
             code=s.code,
@@ -65,25 +106,36 @@ async def get_pending_schools(
             contact_phone=s.contact_phone,
             status=s.status,
             created_at=s.created_at,
-        )
-        for s in schools
-    ]
+            school_type=s.school_type,
+            province=s.province,
+            city=s.city,
+            district=s.district,
+            admin_username=admin_info.get("admin_username", ""),
+            admin_real_name=admin_info.get("admin_real_name", ""),
+            admin_phone=admin_info.get("admin_phone", ""),
+            admin_is_active=admin_info.get("admin_is_active", True),
+            admin_email=admin_info.get("admin_email", ""),
+            user_count=user_count,
+        ))
     return APIResponse.success(data=PageResponse(items=items, total=total, page=page, page_size=page_size))
 
 
-@router.get("/{school_id}", response_model=APIResponse[SchoolInfo])
+@router.get("/{school_id}", response_model=APIResponse[SchoolDetailInfo])
 async def get_school(
     school_id: str,
     current_user: User = Depends(get_current_user_dependency),
     db: AsyncSession = Depends(get_db),
 ):
     school_repo = SchoolRepository(db)
+    user_repo = UserRepository(db)
     school = await school_repo.get_by_id(school_id)
     if school is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="学校不存在")
     if current_user.role != UserRole.SUPER_ADMIN and current_user.school_id != school_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
-    info = SchoolInfo(
+    admin_info = await _get_school_admin_info(school_id, user_repo, db)
+    user_count = await _get_school_user_count(school_id, db)
+    info = SchoolDetailInfo(
         id=school.id,
         name=school.name,
         code=school.code,
@@ -92,6 +144,16 @@ async def get_school(
         contact_phone=school.contact_phone,
         status=school.status,
         created_at=school.created_at,
+        school_type=school.school_type,
+        province=school.province,
+        city=school.city,
+        district=school.district,
+        admin_username=admin_info.get("admin_username", ""),
+        admin_real_name=admin_info.get("admin_real_name", ""),
+        admin_phone=admin_info.get("admin_phone", ""),
+        admin_is_active=admin_info.get("admin_is_active", True),
+        admin_email=admin_info.get("admin_email", ""),
+        user_count=user_count,
     )
     return APIResponse.success(data=info)
 

@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.user import User, UserRole
 from app.schemas.common import APIResponse, PageResponse
-from app.schemas.user import UserInfo, TeacherCreate, UserUpdate, UserStatusUpdate, ResetPasswordRequest
+from app.schemas.user import UserInfo, TeacherCreate, UserUpdate, UserStatusUpdate, ResetPasswordRequest, AdminCreateRequest
 from app.repositories.user import UserRepository
 from app.services.user import create_teacher, update_user_profile
 from app.services.auth import validate_password_strength
@@ -23,7 +23,7 @@ async def get_users(
 ):
     user_repo = UserRepository(db)
     if current_user.role == UserRole.SUPER_ADMIN:
-        users, total = await user_repo.get_all(page=page, page_size=page_size)
+        users, total = await user_repo.get_admin_users(created_by=current_user.id, page=page, page_size=page_size)
     else:
         if not current_user.school_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
@@ -47,8 +47,51 @@ async def get_users(
             phone=u.phone,
             email=u.email,
             is_active=u.is_active,
+            created_by=u.created_by,
         ))
     return APIResponse.success(data=PageResponse(items=items, total=total, page=page, page_size=page_size))
+
+
+@router.post("/admin", response_model=APIResponse[UserInfo])
+async def create_admin_endpoint(
+    request: AdminCreateRequest,
+    current_user: User = Depends(require_super_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    if not validate_password_strength(request.password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="密码强度不足：至少8位，需包含大小写字母和数字",
+        )
+    user_repo = UserRepository(db)
+    existing = await user_repo.get_by_username(request.username)
+    if existing:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="用户名已存在")
+    from app.services.auth import get_password_hash
+    admin_user = User(
+        username=request.username,
+        password_hash=get_password_hash(request.password),
+        real_name=request.real_name,
+        role=UserRole.SUPER_ADMIN,
+        created_by=current_user.id,
+        is_active=True,
+        phone=request.phone,
+        email=request.email,
+    )
+    await user_repo.create(admin_user)
+    user_info = UserInfo(
+        id=admin_user.id,
+        username=admin_user.username,
+        real_name=admin_user.real_name,
+        role=admin_user.role,
+        school_id=admin_user.school_id,
+        school_name=None,
+        phone=admin_user.phone,
+        email=admin_user.email,
+        is_active=admin_user.is_active,
+        created_by=admin_user.created_by,
+    )
+    return APIResponse.success(data=user_info)
 
 
 @router.post("/teachers", response_model=APIResponse[UserInfo])
@@ -132,6 +175,11 @@ async def reset_password(
             detail="密码强度不足：至少8位，需包含大小写字母和数字",
         )
     user_repo = UserRepository(db)
+    target_user = await user_repo.get_by_id(user_id)
+    if target_user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
+    if target_user.created_by != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
     from app.services.auth import get_password_hash
     await user_repo.update(user_id, {"password_hash": get_password_hash(request.new_password)})
     return APIResponse.success(message="密码重置成功")
@@ -145,5 +193,10 @@ async def update_user_status(
     db: AsyncSession = Depends(get_db),
 ):
     user_repo = UserRepository(db)
+    target_user = await user_repo.get_by_id(user_id)
+    if target_user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
+    if target_user.created_by != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
     await user_repo.update(user_id, {"is_active": request.is_active})
     return APIResponse.success(message="用户状态更新成功")

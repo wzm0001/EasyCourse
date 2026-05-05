@@ -44,10 +44,17 @@ export default function SchoolForm({ open, editData, onClose, onSuccess }: Schoo
         <Form.Item name="name" label="学校名称" rules={[{ required: true, message: '请输入学校名称' }]}>
           <Input />
         </Form.Item>
-        <Form.Item name="code" label="学校编码" rules={[{ required: true, message: '请输入学校编码' }]}>
+        <Form.Item
+          name="code"
+          label="学校编码"
+          rules={[
+            { required: true, message: '请输入学校编码' },
+            { pattern: /^[a-zA-Z0-9_]+$/, message: '仅允许字母、数字和下划线' },
+          ]}
+        >
           <Input disabled={isEdit} />
         </Form.Item>
-        <Form.Item name="type" label="学校类型" rules={[{ required: true, message: '请选择学校类型' }]}>
+        <Form.Item name="school_type" label="学校类型" rules={[{ required: true, message: '请选择学校类型' }]}>
           <Select
             options={[
               { label: '小学', value: 'primary' },
@@ -70,10 +77,17 @@ export default function SchoolForm({ open, editData, onClose, onSuccess }: Schoo
         <Form.Item name="address" label="详细地址">
           <Input />
         </Form.Item>
-        <Form.Item name="contact_name" label="联系人">
+        <Form.Item name="contact_person" label="联系人" rules={[{ required: true, message: '请输入联系人' }]}>
           <Input />
         </Form.Item>
-        <Form.Item name="contact_phone" label="联系电话">
+        <Form.Item
+          name="contact_phone"
+          label="联系电话"
+          rules={[
+            { required: true, message: '请输入联系电话' },
+            { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号' },
+          ]}
+        >
           <Input />
         </Form.Item>
       </Form>

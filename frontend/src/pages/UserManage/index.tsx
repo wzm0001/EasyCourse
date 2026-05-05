@@ -1,30 +1,23 @@
-import { Card, Button, Space, Tag, message, Popconfirm, Modal, Form, Input, Select } from 'antd';
+import { Card, Button, Space, Tag, message, Popconfirm, Modal, Form, Input } from 'antd';
 import { PlusOutlined, EditOutlined, KeyOutlined, StopOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { useState, useRef } from 'react';
-import { getUsers, createTeacher, updateUser, resetPassword, toggleUserStatus } from '@/api/users';
+import { getUsers, createAdmin, updateUser, resetPassword, toggleUserStatus } from '@/api/users';
 
 export default function UserManage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetUserId, setResetUserId] = useState('');
+  const [resetUsername, setResetUsername] = useState('');
   const actionRef = useRef<ActionType>(null);
   const [form] = Form.useForm();
+  const [resetForm] = Form.useForm();
 
   const columns: ProColumns<any>[] = [
     { title: '用户名', dataIndex: 'username', width: 120 },
     { title: '姓名', dataIndex: 'real_name', width: 100 },
-    {
-      title: '角色',
-      dataIndex: 'role',
-      width: 120,
-      valueEnum: {
-        super_admin: { text: '超级管理员', status: 'Error' },
-        school_admin: { text: '学校管理员', status: 'Processing' },
-        teacher: { text: '教师', status: 'Success' },
-      },
-    },
-    { title: '学校', dataIndex: 'school_name', width: 150, search: false },
     { title: '手机号', dataIndex: 'phone', width: 130, search: false },
     { title: '邮箱', dataIndex: 'email', width: 180, search: false, ellipsis: true },
     {
@@ -35,6 +28,13 @@ export default function UserManage() {
       render: (_, record) => (
         <Tag color={record.is_active ? 'success' : 'default'}>{record.is_active ? '启用' : '禁用'}</Tag>
       ),
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'created_at',
+      width: 180,
+      search: false,
+      valueType: 'dateTime',
     },
     {
       title: '操作',
@@ -54,26 +54,24 @@ export default function UserManage() {
           >
             编辑
           </Button>
-          <Popconfirm
-            title="确定重置该用户密码吗？"
-            onConfirm={async () => {
-              try {
-                await resetPassword(record.id);
-                message.success('密码已重置');
-              } catch {
-                message.error('重置失败');
-              }
+          <Button
+            type="link"
+            size="small"
+            icon={<KeyOutlined />}
+            onClick={() => {
+              setResetUserId(record.id);
+              setResetUsername(record.username);
+              resetForm.resetFields();
+              setResetOpen(true);
             }}
           >
-            <Button type="link" size="small" icon={<KeyOutlined />}>
-              重置密码
-            </Button>
-          </Popconfirm>
+            重置密码
+          </Button>
           <Popconfirm
             title={record.is_active ? '确定禁用该用户吗？' : '确定启用该用户吗？'}
             onConfirm={async () => {
               try {
-                await toggleUserStatus(record.id);
+                await toggleUserStatus(record.id, !record.is_active);
                 message.success('操作成功');
                 actionRef.current?.reload();
               } catch {
@@ -96,7 +94,7 @@ export default function UserManage() {
   ];
 
   return (
-    <Card title="用户管理">
+    <Card title="管理员用户管理">
       <ProTable<any>
         columns={columns}
         actionRef={actionRef}
@@ -106,7 +104,6 @@ export default function UserManage() {
             page_size: params.pageSize || 10,
             username: params.username,
             real_name: params.real_name,
-            role: params.role,
           });
           return {
             data: result.items,
@@ -127,13 +124,13 @@ export default function UserManage() {
               setFormOpen(true);
             }}
           >
-            新增教师
+            新增管理员
           </Button>,
         ]}
         pagination={{ defaultPageSize: 10 }}
       />
       <Modal
-        title={editData ? '编辑用户' : '新增教师'}
+        title={editData ? '编辑管理员' : '新增管理员'}
         open={formOpen}
         onCancel={() => {
           setFormOpen(false);
@@ -146,7 +143,7 @@ export default function UserManage() {
               await updateUser(editData.id, values);
               message.success('更新成功');
             } else {
-              await createTeacher(values);
+              await createAdmin(values);
               message.success('创建成功');
             }
             actionRef.current?.reload();
@@ -163,26 +160,80 @@ export default function UserManage() {
             <Input disabled={!!editData} />
           </Form.Item>
           {!editData && (
-            <Form.Item name="password" label="密码" rules={[{ required: true, message: '请输入密码' }]}>
+            <Form.Item
+              name="password"
+              label="密码"
+              rules={[
+                { required: true, message: '请输入密码' },
+                { min: 8, message: '密码至少8位' },
+                {
+                  pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
+                  message: '密码需包含大小写字母和数字',
+                },
+              ]}
+            >
               <Input.Password />
             </Form.Item>
           )}
           <Form.Item name="real_name" label="姓名" rules={[{ required: true, message: '请输入姓名' }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="role" label="角色" rules={[{ required: true, message: '请选择角色' }]}>
-            <Select
-              options={[
-                { label: '教师', value: 'teacher' },
-                { label: '学校管理员', value: 'school_admin' },
-              ]}
-            />
-          </Form.Item>
           <Form.Item name="phone" label="手机号">
             <Input />
           </Form.Item>
           <Form.Item name="email" label="邮箱">
             <Input />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        title={`重置密码 - ${resetUsername}`}
+        open={resetOpen}
+        onCancel={() => setResetOpen(false)}
+        onOk={async () => {
+          try {
+            const values = await resetForm.validateFields();
+            await resetPassword(resetUserId, values.new_password);
+            message.success('密码已重置');
+            setResetOpen(false);
+          } catch {
+            message.error('重置失败');
+          }
+        }}
+        destroyOnClose
+      >
+        <Form form={resetForm} layout="vertical" preserve={false}>
+          <Form.Item
+            name="new_password"
+            label="新密码"
+            rules={[
+              { required: true, message: '请输入新密码' },
+              { min: 8, message: '密码至少8位' },
+              {
+                pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
+                message: '密码需包含大小写字母和数字',
+              },
+            ]}
+          >
+            <Input.Password />
+          </Form.Item>
+          <Form.Item
+            name="confirm_password"
+            label="确认密码"
+            dependencies={['new_password']}
+            rules={[
+              { required: true, message: '请确认新密码' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('new_password') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('两次输入的密码不一致'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password />
           </Form.Item>
         </Form>
       </Modal>

@@ -8,6 +8,7 @@ from typing import Dict, Tuple, Optional, Any
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
+from app.config import settings
 
 
 _csrf_tokens: Dict[str, float] = {}
@@ -20,8 +21,6 @@ _last_cleanup = time.time()
 DEFAULT_RATE_LIMIT = 60
 LOGIN_RATE_LIMIT = 5
 RATE_WINDOW = 60
-
-DEBUG = os.environ.get("DEBUG", "").lower() in ("true", "1", "yes")
 
 
 def _cleanup_rate_limits():
@@ -99,7 +98,7 @@ async def check_single_session(user_id: str, token: str, db) -> bool:
 
 class CSRFMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
-        if DEBUG:
+        if settings.DEBUG:
             return await call_next(request)
 
         if request.method in ("GET", "HEAD", "OPTIONS"):
