@@ -7,7 +7,7 @@ import CourseTab from './CourseTab';
 import TeacherTab from './TeacherTab';
 import ClassroomTab from './ClassroomTab';
 import ArrangementTab from './ArrangementTab';
-import { ImportExportModal } from './ImportExportModal';
+import ImportExportModal from './ImportExportModal';
 import { useResponsive } from '@/hooks/useResponsive';
 
 export default function BasicData() {
