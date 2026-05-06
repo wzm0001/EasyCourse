@@ -1,5 +1,8 @@
-import { Modal, Form, Input, Select, message } from 'antd';
+import { Modal, Form, Input, Select, Upload, Button, message } from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
 import { createSchool, updateSchool } from '@/api/schools';
+import api from '@/api';
+import { useState } from 'react';
 
 interface SchoolFormProps {
   open: boolean;
@@ -11,20 +14,27 @@ interface SchoolFormProps {
 export default function SchoolForm({ open, editData, onClose, onSuccess }: SchoolFormProps) {
   const [form] = Form.useForm();
   const isEdit = !!editData;
+  const [attachmentUrl, setAttachmentUrl] = useState(editData?.attachment || '');
+
+  const handleOpen = () => {
+    setAttachmentUrl(editData?.attachment || '');
+  };
 
   return (
     <Modal
       title={isEdit ? '编辑学校' : '新增学校'}
       open={open}
       onCancel={onClose}
+      afterOpenChange={(visible) => { if (visible) handleOpen(); }}
       onOk={async () => {
         try {
           const values = await form.validateFields();
+          const data = { ...values, attachment: attachmentUrl };
           if (isEdit) {
-            await updateSchool(editData.id, values);
+            await updateSchool(editData.id, data);
             message.success('更新成功');
           } else {
-            await createSchool(values);
+            await createSchool(data);
             message.success('创建成功');
           }
           onSuccess();
@@ -48,13 +58,14 @@ export default function SchoolForm({ open, editData, onClose, onSuccess }: Schoo
         </Form.Item>
         <Form.Item
           name="code"
-          label="学校编码"
+          label="统一社会信用代码"
           rules={[
-            { required: true, message: '请输入学校编码' },
-            { pattern: /^[a-zA-Z0-9_]+$/, message: '仅允许字母、数字和下划线' },
+            { required: true, message: '请输入统一社会信用代码' },
+            { len: 18, message: '统一社会信用代码为18位' },
+            { pattern: /^[0-9A-Z]+$/, message: '仅允许大写字母和数字' },
           ]}
         >
-          <Input disabled={isEdit} />
+          <Input disabled={isEdit} placeholder="请输入18位统一社会信用代码" style={{ textTransform: 'uppercase' }} />
         </Form.Item>
         <Form.Item name="school_type" label="学校类型" rules={[{ required: true, message: '请选择学校类型' }]}>
           <Select
@@ -91,6 +102,38 @@ export default function SchoolForm({ open, editData, onClose, onSuccess }: Schoo
           ]}
         >
           <Input />
+        </Form.Item>
+        <Form.Item label="附件上传" extra="请上传学校资质证明等材料">
+          <Upload
+            maxCount={1}
+            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            defaultFileList={editData?.attachment ? [{
+              uid: '-1',
+              name: '附件',
+              status: 'done' as const,
+              url: editData.attachment,
+            }] : []}
+            customRequest={async ({ file, onSuccess, onError }) => {
+              const formData = new FormData();
+              formData.append('file', file as File);
+              try {
+                const res = await api.post('/schools/upload', formData, {
+                  headers: { 'Content-Type': 'multipart/form-data' },
+                });
+                const data = (res.data as any)?.data;
+                setAttachmentUrl(data?.url || '');
+                onSuccess?.(data);
+              } catch (e: any) {
+                onError?.(e);
+                message.error('文件上传失败');
+              }
+            }}
+            onRemove={() => {
+              setAttachmentUrl('');
+            }}
+          >
+            <Button icon={<UploadOutlined />}>选择文件</Button>
+          </Upload>
         </Form.Item>
       </Form>
     </Modal>

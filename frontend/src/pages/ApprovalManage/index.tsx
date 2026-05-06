@@ -1,5 +1,5 @@
-import { Card, Button, Space, message, Modal, Input } from 'antd';
-import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { Card, Button, Space, message, Modal, Input, Descriptions, Tag } from 'antd';
+import { CheckOutlined, CloseOutlined, PaperClipOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { useState, useRef } from 'react';
@@ -9,10 +9,19 @@ export default function ApprovalManage() {
   const actionRef = useRef<ActionType>(null);
   const [rejectModal, setRejectModal] = useState<{ open: boolean; id: string }>({ open: false, id: '' });
   const [rejectReason, setRejectReason] = useState('');
+  const [detailModal, setDetailModal] = useState<{ open: boolean; record: any }>({ open: false, record: {} });
+
+  const schoolTypeMap: Record<string, string> = {
+    primary: '小学',
+    middle: '初中',
+    high: '高中',
+    nine_year: '九年一贯制',
+    complete: '完全中学',
+  };
 
   const columns: ProColumns<any>[] = [
     { title: '学校名称', dataIndex: 'name', width: 200, ellipsis: true },
-    { title: '学校编码', dataIndex: 'code', width: 120 },
+    { title: '统一社会信用代码', dataIndex: 'code', width: 200 },
     {
       title: '学校类型',
       dataIndex: 'school_type',
@@ -25,17 +34,30 @@ export default function ApprovalManage() {
         complete: { text: '完全中学' },
       },
     },
-    { title: '省份', dataIndex: 'province', width: 80 },
-    { title: '城市', dataIndex: 'city', width: 80 },
     { title: '联系人', dataIndex: 'contact_person', width: 100 },
     { title: '联系电话', dataIndex: 'contact_phone', width: 130 },
+    {
+      title: '附件',
+      dataIndex: 'attachment',
+      width: 80,
+      search: false,
+      render: (_, record) =>
+        record.attachment ? (
+          <a href={record.attachment} target="_blank" rel="noopener noreferrer">
+            <PaperClipOutlined /> 查看
+          </a>
+        ) : '-',
+    },
     { title: '申请时间', dataIndex: 'created_at', width: 180, valueType: 'dateTime', search: false },
     {
       title: '操作',
       valueType: 'option',
-      width: 200,
+      width: 250,
       render: (_, record) => (
         <Space>
+          <Button type="link" size="small" onClick={() => setDetailModal({ open: true, record })}>
+            详情
+          </Button>
           <Button
             type="primary"
             size="small"
@@ -87,7 +109,7 @@ export default function ApprovalManage() {
         }}
         rowKey="id"
         search={{ labelWidth: 'auto', defaultCollapsed: true }}
-        scroll={{ x: 1000 }}
+        scroll={{ x: 1100 }}
         pagination={{ defaultPageSize: 10 }}
       />
       <Modal
@@ -112,6 +134,34 @@ export default function ApprovalManage() {
           onChange={(e) => setRejectReason(e.target.value)}
           placeholder="请输入拒绝原因"
         />
+      </Modal>
+      <Modal
+        title="申请详情"
+        open={detailModal.open}
+        onCancel={() => setDetailModal({ open: false, record: {} })}
+        footer={null}
+        width={600}
+      >
+        <Descriptions column={2} bordered size="small">
+          <Descriptions.Item label="学校名称">{detailModal.record.name}</Descriptions.Item>
+          <Descriptions.Item label="统一社会信用代码">{detailModal.record.code}</Descriptions.Item>
+          <Descriptions.Item label="学校类型">
+            <Tag>{schoolTypeMap[detailModal.record.school_type] || detailModal.record.school_type}</Tag>
+          </Descriptions.Item>
+          <Descriptions.Item label="联系人">{detailModal.record.contact_person}</Descriptions.Item>
+          <Descriptions.Item label="联系电话">{detailModal.record.contact_phone}</Descriptions.Item>
+          <Descriptions.Item label="省份">{detailModal.record.province || '-'}</Descriptions.Item>
+          <Descriptions.Item label="城市">{detailModal.record.city || '-'}</Descriptions.Item>
+          <Descriptions.Item label="区县">{detailModal.record.district || '-'}</Descriptions.Item>
+          <Descriptions.Item label="详细地址" span={2}>{detailModal.record.address || '-'}</Descriptions.Item>
+          <Descriptions.Item label="附件" span={2}>
+            {detailModal.record.attachment ? (
+              <a href={detailModal.record.attachment} target="_blank" rel="noopener noreferrer">
+                <PaperClipOutlined /> 查看附件
+              </a>
+            ) : '无'}
+          </Descriptions.Item>
+        </Descriptions>
       </Modal>
     </Card>
   );

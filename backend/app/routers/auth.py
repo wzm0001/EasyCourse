@@ -69,14 +69,14 @@ async def register(request: SchoolCreate, db: AsyncSession = Depends(get_db)):
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="该学校编码已被注册",
+            detail="该统一社会信用代码已被注册",
         )
     school_repo = SchoolRepository(db)
     existing_school = await school_repo.get_by_code(request.code)
     if existing_school:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="该学校编码已被注册",
+            detail="该统一社会信用代码已被注册",
         )
     from app.services.auth import get_password_hash
     school = await register_school(request.model_dump(), db)

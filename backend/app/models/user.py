@@ -31,6 +31,7 @@ class School(BaseModel):
     province: Mapped[str] = mapped_column(String(100), default="")
     city: Mapped[str] = mapped_column(String(100), default="")
     district: Mapped[str] = mapped_column(String(100), default="")
+    attachment: Mapped[str] = mapped_column(Text, default="")
 
     users: Mapped[list["User"]] = relationship("User", back_populates="school")
 

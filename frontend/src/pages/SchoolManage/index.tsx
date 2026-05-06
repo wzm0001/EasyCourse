@@ -1,5 +1,5 @@
 import { Card, Button, Space, Tag, App, Popconfirm, Modal, Form, Input, Radio } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined, KeyOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined, KeyOutlined, ReloadOutlined, PaperClipOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { useState, useRef } from 'react';
@@ -63,7 +63,7 @@ export default function SchoolManage() {
 
   const columns: ProColumns<any>[] = [
     { title: '学校名称', dataIndex: 'name', width: 200, ellipsis: true },
-    { title: '学校编码', dataIndex: 'code', width: 120 },
+    { title: '统一社会信用代码', dataIndex: 'code', width: 200 },
     {
       title: '学校类型',
       dataIndex: 'school_type',
@@ -83,6 +83,18 @@ export default function SchoolManage() {
     { title: '详细地址', dataIndex: 'address', width: 150, search: false, ellipsis: true },
     { title: '联系人', dataIndex: 'contact_person', width: 100, search: false },
     { title: '联系电话', dataIndex: 'contact_phone', width: 130, search: false },
+    {
+      title: '附件',
+      dataIndex: 'attachment',
+      width: 80,
+      search: false,
+      render: (_, record) =>
+        record.attachment ? (
+          <a href={record.attachment} target="_blank" rel="noopener noreferrer">
+            <PaperClipOutlined /> 查看
+          </a>
+        ) : '-',
+    },
     { title: '管理员账号', dataIndex: 'admin_username', width: 120, search: false },
     {
       title: '管理员状态',
@@ -209,7 +221,7 @@ export default function SchoolManage() {
         }}
         rowKey="id"
         search={{ labelWidth: 'auto', defaultCollapsed: true }}
-        scroll={{ x: 1400 }}
+        scroll={{ x: 1500 }}
         toolBarRender={() => [
           <Button
             key="add"

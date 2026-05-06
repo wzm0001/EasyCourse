@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Form, Input, Button, Card, App, Checkbox, Modal, Steps, Row, Col } from 'antd';
-import { UserOutlined, LockOutlined, BankOutlined, PhoneOutlined, EnvironmentOutlined, KeyOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Card, App, Checkbox, Modal, Steps, Row, Col, Upload } from 'antd';
+import { UserOutlined, LockOutlined, BankOutlined, PhoneOutlined, EnvironmentOutlined, KeyOutlined, UploadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import api from '@/api';
@@ -20,6 +20,7 @@ export default function Login() {
   const [verifyForm] = Form.useForm();
   const [resetForm] = Form.useForm();
   const [verifiedUsername, setVerifiedUsername] = useState('');
+  const [attachmentUrl, setAttachmentUrl] = useState('');
 
   const handleSubmit = async (values: LoginRequest & { remember?: boolean }) => {
     setLoginLoading(true);
@@ -49,10 +50,12 @@ export default function Login() {
         contact_person: values.contact_person,
         contact_phone: values.contact_phone,
         password: values.password,
+        attachment: attachmentUrl,
       });
       const result = response.data as any;
       message.success(result?.message || result?.data?.message || '注册申请已提交，请等待管理员审批');
       setRegisterOpen(false);
+      setAttachmentUrl('');
     } catch (e: any) {
       const errMsg = e?.response?.data?.detail || '注册失败，请稍后重试';
       message.error(errMsg);
@@ -217,7 +220,7 @@ export default function Login() {
         destroyOnClose
       >
         <div style={{ marginBottom: 16, color: '#666', fontSize: 13 }}>
-          请填写学校信息提交申请，管理员审批通过后即可使用学校编码和设置的密码登录系统
+          请填写学校信息提交申请，管理员审批通过后即可使用统一社会信用代码和设置的密码登录系统
         </div>
         <Form
           layout="vertical"
@@ -233,14 +236,15 @@ export default function Login() {
           </Form.Item>
           <Form.Item
             name="code"
-            label="学校编码"
+            label="统一社会信用代码"
             rules={[
-              { required: true, message: '请输入学校编码' },
-              { pattern: /^[a-zA-Z0-9_]+$/, message: '仅允许字母、数字和下划线' },
+              { required: true, message: '请输入统一社会信用代码' },
+              { len: 18, message: '统一社会信用代码为18位' },
+              { pattern: /^[0-9A-Z]+$/, message: '仅允许大写字母和数字' },
             ]}
-            extra="学校编码将作为登录用户名，不可修改"
+            extra="统一社会信用代码将作为登录用户名，不可修改"
           >
-            <Input prefix={<KeyOutlined />} placeholder="请输入学校编码（如：school001）" />
+            <Input prefix={<KeyOutlined />} placeholder="请输入18位统一社会信用代码" style={{ textTransform: 'uppercase' }} />
           </Form.Item>
           <Form.Item
             name="password"
@@ -253,7 +257,7 @@ export default function Login() {
                 message: '密码需包含大小写字母和数字',
               },
             ]}
-            extra="审批通过后使用学校编码和此密码登录"
+            extra="审批通过后使用统一社会信用代码和此密码登录"
           >
             <Input.Password prefix={<LockOutlined />} placeholder="请输入登录密码" />
           </Form.Item>
@@ -276,6 +280,32 @@ export default function Login() {
             ]}
           >
             <Input prefix={<PhoneOutlined />} placeholder="请输入联系电话" />
+          </Form.Item>
+          <Form.Item label="附件上传" extra="请上传学校资质证明等材料">
+            <Upload
+              maxCount={1}
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+              customRequest={async ({ file, onSuccess, onError }) => {
+                const formData = new FormData();
+                formData.append('file', file as File);
+                try {
+                  const res = await api.post('/schools/upload', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                  });
+                  const data = (res.data as any)?.data;
+                  setAttachmentUrl(data?.url || '');
+                  onSuccess?.(data);
+                } catch (e: any) {
+                  onError?.(e);
+                  message.error('文件上传失败');
+                }
+              }}
+              onRemove={() => {
+                setAttachmentUrl('');
+              }}
+            >
+              <Button icon={<UploadOutlined />}>选择文件</Button>
+            </Upload>
           </Form.Item>
           <Form.Item>
             <Row gutter={12} justify="end">

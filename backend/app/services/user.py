@@ -17,6 +17,7 @@ async def register_school(school_data: dict, db: AsyncSession) -> School:
         contact_person=school_data.get("contact_person", ""),
         contact_phone=school_data.get("contact_phone", ""),
         status=AccountStatus.PENDING,
+        attachment=school_data.get("attachment", ""),
     )
     school = await school_repo.create(school)
     return school

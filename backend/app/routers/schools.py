@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import os
+import uuid
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 from typing import List
@@ -11,6 +13,7 @@ from app.repositories.user import SchoolRepository, UserRepository, ApprovalRepo
 from app.services.user import approve_school, reject_school, request_data_change
 from app.services.auth import get_password_hash
 from app.middleware.auth import require_super_admin, require_role, get_current_user_dependency
+from app.config import settings
 
 router = APIRouter(prefix="/schools", tags=["学校管理"])
 
@@ -51,6 +54,61 @@ async def _get_school_user_count(school_id: str, db: AsyncSession) -> int:
     return result.scalar_one()
 
 
+async def _build_school_detail(s: School, user_repo: UserRepository, db: AsyncSession) -> SchoolDetailInfo:
+    admin_info = await _get_school_admin_info(s.id, user_repo, db)
+    user_count = await _get_school_user_count(s.id, db)
+    return SchoolDetailInfo(
+        id=s.id,
+        name=s.name,
+        code=s.code,
+        address=s.address,
+        contact_person=s.contact_person,
+        contact_phone=s.contact_phone,
+        status=s.status,
+        created_at=s.created_at,
+        school_type=s.school_type,
+        province=s.province,
+        city=s.city,
+        district=s.district,
+        attachment=s.attachment,
+        admin_username=admin_info.get("admin_username", ""),
+        admin_real_name=admin_info.get("admin_real_name", ""),
+        admin_phone=admin_info.get("admin_phone", ""),
+        admin_is_active=admin_info.get("admin_is_active", True),
+        admin_email=admin_info.get("admin_email", ""),
+        user_count=user_count,
+    )
+
+
+@router.post("/upload", response_model=APIResponse)
+async def upload_file(
+    file: UploadFile = File(...),
+):
+    upload_dir = settings.UPLOAD_DIR
+    os.makedirs(upload_dir, exist_ok=True)
+    ext = os.path.splitext(file.filename or "")[1]
+    if ext.lower() not in (".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="不支持的文件类型")
+    filename = f"{uuid.uuid4().hex}{ext}"
+    filepath = os.path.join(upload_dir, filename)
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="文件大小不能超过10MB")
+    with open(filepath, "wb") as f:
+        f.write(content)
+    url = f"/api/v1/schools/files/{filename}"
+    return APIResponse.success(data={"url": url, "filename": file.filename})
+
+
+@router.get("/files/{filename}")
+async def get_uploaded_file(filename: str):
+    from fastapi.responses import FileResponse
+    filepath = os.path.join(settings.UPLOAD_DIR, filename)
+    if not os.path.exists(filepath) or not os.path.abspath(filepath).startswith(os.path.abspath(settings.UPLOAD_DIR)):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="文件不存在")
+    return FileResponse(filepath)
+
+
 @router.get("", response_model=APIResponse[PageResponse[SchoolDetailInfo]])
 async def get_schools(
     page: int = 1,
@@ -61,30 +119,7 @@ async def get_schools(
     school_repo = SchoolRepository(db)
     user_repo = UserRepository(db)
     schools, total = await school_repo.get_all(page=page, page_size=page_size)
-    items = []
-    for s in schools:
-        admin_info = await _get_school_admin_info(s.id, user_repo, db)
-        user_count = await _get_school_user_count(s.id, db)
-        items.append(SchoolDetailInfo(
-            id=s.id,
-            name=s.name,
-            code=s.code,
-            address=s.address,
-            contact_person=s.contact_person,
-            contact_phone=s.contact_phone,
-            status=s.status,
-            created_at=s.created_at,
-            school_type=s.school_type,
-            province=s.province,
-            city=s.city,
-            district=s.district,
-            admin_username=admin_info.get("admin_username", ""),
-            admin_real_name=admin_info.get("admin_real_name", ""),
-            admin_phone=admin_info.get("admin_phone", ""),
-            admin_is_active=admin_info.get("admin_is_active", True),
-            admin_email=admin_info.get("admin_email", ""),
-            user_count=user_count,
-        ))
+    items = [await _build_school_detail(s, user_repo, db) for s in schools]
     return APIResponse.success(data=PageResponse(items=items, total=total, page=page, page_size=page_size))
 
 
@@ -107,30 +142,7 @@ async def get_pending_schools(
         select(School).where(School.status == AccountStatus.PENDING).offset(offset).limit(page_size)
     )
     schools = list(result.scalars().all())
-    items = []
-    for s in schools:
-        admin_info = await _get_school_admin_info(s.id, user_repo, db)
-        user_count = await _get_school_user_count(s.id, db)
-        items.append(SchoolDetailInfo(
-            id=s.id,
-            name=s.name,
-            code=s.code,
-            address=s.address,
-            contact_person=s.contact_person,
-            contact_phone=s.contact_phone,
-            status=s.status,
-            created_at=s.created_at,
-            school_type=s.school_type,
-            province=s.province,
-            city=s.city,
-            district=s.district,
-            admin_username=admin_info.get("admin_username", ""),
-            admin_real_name=admin_info.get("admin_real_name", ""),
-            admin_phone=admin_info.get("admin_phone", ""),
-            admin_is_active=admin_info.get("admin_is_active", True),
-            admin_email=admin_info.get("admin_email", ""),
-            user_count=user_count,
-        ))
+    items = [await _build_school_detail(s, user_repo, db) for s in schools]
     return APIResponse.success(data=PageResponse(items=items, total=total, page=page, page_size=page_size))
 
 
@@ -147,28 +159,7 @@ async def get_school(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="学校不存在")
     if current_user.role != UserRole.SUPER_ADMIN and current_user.school_id != school_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
-    admin_info = await _get_school_admin_info(school_id, user_repo, db)
-    user_count = await _get_school_user_count(school_id, db)
-    info = SchoolDetailInfo(
-        id=school.id,
-        name=school.name,
-        code=school.code,
-        address=school.address,
-        contact_person=school.contact_person,
-        contact_phone=school.contact_phone,
-        status=school.status,
-        created_at=school.created_at,
-        school_type=school.school_type,
-        province=school.province,
-        city=school.city,
-        district=school.district,
-        admin_username=admin_info.get("admin_username", ""),
-        admin_real_name=admin_info.get("admin_real_name", ""),
-        admin_phone=admin_info.get("admin_phone", ""),
-        admin_is_active=admin_info.get("admin_is_active", True),
-        admin_email=admin_info.get("admin_email", ""),
-        user_count=user_count,
-    )
+    info = await _build_school_detail(school, user_repo, db)
     return APIResponse.success(data=info)
 
 

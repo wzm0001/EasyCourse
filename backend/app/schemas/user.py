@@ -41,6 +41,7 @@ class SchoolCreate(BaseModel):
     province: str = ""
     city: str = ""
     district: str = ""
+    attachment: str = ""
 
 
 class SchoolUpdate(BaseModel):
@@ -52,6 +53,7 @@ class SchoolUpdate(BaseModel):
     province: Optional[str] = None
     city: Optional[str] = None
     district: Optional[str] = None
+    attachment: Optional[str] = None
 
 
 class SchoolInfo(BaseModel):
@@ -67,6 +69,7 @@ class SchoolInfo(BaseModel):
     province: str = ""
     city: str = ""
     district: str = ""
+    attachment: str = ""
 
     model_config = {"from_attributes": True}
 
