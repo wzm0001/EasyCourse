@@ -43,13 +43,15 @@ async def get_school_id(current_user: User) -> str:
     return current_user.school_id
 
 
-async def resolve_semester_id(db: AsyncSession, school_id: str, semester_id: Optional[str]) -> str:
+async def resolve_semester_id(db: AsyncSession, school_id: str, semester_id: Optional[str], raise_if_missing: bool = True) -> Optional[str]:
     if semester_id:
         return semester_id
     semester_repo = SemesterRepository(db)
     active = await semester_repo.get_active(school_id)
     if not active:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="没有活跃学期，请指定学期")
+        if raise_if_missing:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="没有活跃学期，请指定学期")
+        return None
     return active.id
 
 
@@ -64,7 +66,9 @@ async def get_grades(
     school_id = await get_school_id(current_user) if current_user.role != UserRole.SUPER_ADMIN else current_user.school_id
     if not school_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前用户未关联学校")
-    sid = await resolve_semester_id(db, school_id, semester_id)
+    sid = await resolve_semester_id(db, school_id, semester_id, raise_if_missing=False)
+    if not sid:
+        return APIResponse.success(data=PageResponse(items=[], total=0, page=page, page_size=page_size))
     service = GradeService(db)
     grades, total = await service.get_list(school_id, sid, page, page_size)
     items = [GradeInfo(id=g.id, school_id=g.school_id, semester_id=g.semester_id, name=g.name, sort_order=g.sort_order, created_at=g.created_at) for g in grades]
@@ -134,7 +138,9 @@ async def get_classes(
     school_id = await get_school_id(current_user) if current_user.role != UserRole.SUPER_ADMIN else current_user.school_id
     if not school_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前用户未关联学校")
-    sid = await resolve_semester_id(db, school_id, semester_id)
+    sid = await resolve_semester_id(db, school_id, semester_id, raise_if_missing=False)
+    if not sid:
+        return APIResponse.success(data=PageResponse(items=[], total=0, page=page, page_size=page_size))
     service = ClassService(db)
     classes, total = await service.get_list(school_id, sid, grade_id, page, page_size)
     items = []
@@ -385,7 +391,9 @@ async def get_teachers(
     school_id = await get_school_id(current_user) if current_user.role != UserRole.SUPER_ADMIN else current_user.school_id
     if not school_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前用户未关联学校")
-    sid = await resolve_semester_id(db, school_id, semester_id)
+    sid = await resolve_semester_id(db, school_id, semester_id, raise_if_missing=False)
+    if not sid:
+        return APIResponse.success(data=PageResponse(items=[], total=0, page=page, page_size=page_size))
     service = TeacherService(db)
     teachers, total = await service.get_list(school_id, sid, page, page_size)
     items = [TeacherInfo(
@@ -530,7 +538,9 @@ async def get_classrooms(
     school_id = await get_school_id(current_user) if current_user.role != UserRole.SUPER_ADMIN else current_user.school_id
     if not school_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前用户未关联学校")
-    sid = await resolve_semester_id(db, school_id, semester_id)
+    sid = await resolve_semester_id(db, school_id, semester_id, raise_if_missing=False)
+    if not sid:
+        return APIResponse.success(data=PageResponse(items=[], total=0, page=page, page_size=page_size))
     service = ClassroomService(db)
     classrooms, total = await service.get_list(school_id, sid, page, page_size)
     items = [ClassroomInfo(
@@ -672,7 +682,9 @@ async def get_teaching_arrangements(
     school_id = await get_school_id(current_user) if current_user.role != UserRole.SUPER_ADMIN else current_user.school_id
     if not school_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前用户未关联学校")
-    sid = await resolve_semester_id(db, school_id, semester_id)
+    sid = await resolve_semester_id(db, school_id, semester_id, raise_if_missing=False)
+    if not sid:
+        return APIResponse.success(data=PageResponse(items=[], total=0, page=page, page_size=page_size))
     service = TeachingArrangementService(db)
     arrangements, total = await service.get_list(school_id, sid, page, page_size)
     teacher_repo = TeacherRepository(db)

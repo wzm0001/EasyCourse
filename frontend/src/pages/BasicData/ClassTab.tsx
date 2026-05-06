@@ -5,6 +5,7 @@ import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getClasses, createClass, updateClass, deleteClass, getGrades, getClassrooms } from '@/api/basicData';
 import { useResponsive } from '@/hooks/useResponsive';
+import { useAppStore } from '@/store/app';
 
 export default function ClassTab() {
   const { message } = App.useApp();
@@ -15,11 +16,12 @@ export default function ClassTab() {
   const [grades, setGrades] = useState<any[]>([]);
   const [classrooms, setClassrooms] = useState<any[]>([]);
   const [form] = Form.useForm();
+  const currentSemester = useAppStore((s) => s.currentSemester);
 
   useEffect(() => {
-    getGrades({ page: 1, page_size: 100 }).then((res) => setGrades(res.items || []));
-    getClassrooms({ page: 1, page_size: 200 }).then((res) => setClassrooms(res.items || []));
-  }, []);
+    getGrades({ page: 1, page_size: 100, semester_id: currentSemester || undefined }).then((res) => setGrades(res.items || []));
+    getClassrooms({ page: 1, page_size: 200, semester_id: currentSemester || undefined }).then((res) => setClassrooms(res.items || []));
+  }, [currentSemester]);
 
   const columns: ProColumns<any>[] = [
     { title: '班级名称', dataIndex: 'name', width: 180 },
@@ -49,7 +51,7 @@ export default function ClassTab() {
         columns={columns}
         actionRef={actionRef}
         request={async (params) => {
-          const result = await getClasses({ page: params.current || 1, page_size: params.pageSize || 10, name: params.name, grade_id: params.grade_id });
+          const result = await getClasses({ page: params.current || 1, page_size: params.pageSize || 10, name: params.name, grade_id: params.grade_id, semester_id: currentSemester || undefined });
           return { data: result.items, total: result.total, success: true };
         }}
         rowKey="id"
@@ -67,7 +69,7 @@ export default function ClassTab() {
           try {
             const values = await form.validateFields();
             if (editData) { await updateClass(editData.id, values); message.success('更新成功'); }
-            else { await createClass(values); message.success('创建成功'); }
+            else { await createClass({ ...values, semester_id: currentSemester }); message.success('创建成功'); }
             actionRef.current?.reload(); setFormOpen(false); setEditData(null);
           } catch { message.error('操作失败'); }
         }}

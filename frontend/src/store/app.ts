@@ -1,16 +1,19 @@
 import { create } from 'zustand';
+import { getActiveSemester } from '@/api/semesters';
 
 interface AppState {
   theme: 'light' | 'dark';
   sidebarCollapsed: boolean;
   mobileDrawerOpen: boolean;
   currentSemester: string | null;
+  currentSemesterName: string | null;
   unreadCount: number;
   toggleTheme: () => void;
   toggleSidebar: () => void;
   setMobileDrawerOpen: (open: boolean) => void;
   setCurrentSemester: (semester: string) => void;
   setUnreadCount: (count: number) => void;
+  fetchActiveSemester: () => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -18,6 +21,7 @@ export const useAppStore = create<AppState>((set) => ({
   sidebarCollapsed: false,
   mobileDrawerOpen: false,
   currentSemester: null,
+  currentSemesterName: null,
   unreadCount: 0,
 
   toggleTheme: () =>
@@ -38,4 +42,18 @@ export const useAppStore = create<AppState>((set) => ({
 
   setUnreadCount: (count: number) =>
     set({ unreadCount: count }),
+
+  fetchActiveSemester: async () => {
+    try {
+      const res = await getActiveSemester();
+      const data = (res as any)?.data || res;
+      if (data && data.id) {
+        set({ currentSemester: data.id, currentSemesterName: data.name });
+      } else {
+        set({ currentSemester: null, currentSemesterName: null });
+      }
+    } catch {
+      set({ currentSemester: null, currentSemesterName: null });
+    }
+  },
 }));

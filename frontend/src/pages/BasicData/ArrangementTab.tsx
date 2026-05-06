@@ -5,6 +5,7 @@ import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getTeachingArrangements, createTeachingArrangement, deleteTeachingArrangement, getGrades, getClasses, getCourses, getTeachers } from '@/api/basicData';
 import { useResponsive } from '@/hooks/useResponsive';
+import { useAppStore } from '@/store/app';
 
 export default function ArrangementTab() {
   const { message } = App.useApp();
@@ -16,13 +17,14 @@ export default function ArrangementTab() {
   const [courses, setCourses] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
   const [form] = Form.useForm();
+  const currentSemester = useAppStore((s) => s.currentSemester);
 
   useEffect(() => {
-    getGrades({ page: 1, page_size: 100 }).then((res) => setGrades(res.items || []));
-    getClasses({ page: 1, page_size: 200 }).then((res) => setClasses(res.items || []));
+    getGrades({ page: 1, page_size: 100, semester_id: currentSemester || undefined }).then((res) => setGrades(res.items || []));
+    getClasses({ page: 1, page_size: 200, semester_id: currentSemester || undefined }).then((res) => setClasses(res.items || []));
     getCourses({ page: 1, page_size: 200 }).then((res) => setCourses(res.items || []));
-    getTeachers({ page: 1, page_size: 200 }).then((res) => setTeachers(res.items || []));
-  }, []);
+    getTeachers({ page: 1, page_size: 200, semester_id: currentSemester || undefined }).then((res) => setTeachers(res.items || []));
+  }, [currentSemester]);
 
   const columns: ProColumns<any>[] = [
     { title: '年级', dataIndex: 'grade_name', width: 100 },
@@ -49,7 +51,7 @@ export default function ArrangementTab() {
         columns={columns}
         actionRef={actionRef}
         request={async (params) => {
-          const result = await getTeachingArrangements({ page: params.current || 1, page_size: params.pageSize || 10, grade_id: params.grade_id, class_id: params.class_id });
+          const result = await getTeachingArrangements({ page: params.current || 1, page_size: params.pageSize || 10, grade_id: params.grade_id, class_id: params.class_id, semester_id: currentSemester || undefined });
           return { data: result.items, total: result.total, success: true };
         }}
         rowKey="id"
@@ -66,7 +68,7 @@ export default function ArrangementTab() {
         onOk={async () => {
           try {
             const values = await form.validateFields();
-            await createTeachingArrangement(values);
+            await createTeachingArrangement({ ...values, semester_id: currentSemester });
             message.success('创建成功');
             actionRef.current?.reload();
             setFormOpen(false);

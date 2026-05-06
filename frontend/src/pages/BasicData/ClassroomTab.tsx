@@ -5,6 +5,7 @@ import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getClassrooms, createClassroom, updateClassroom, deleteClassroom, getClassroomCourses, setClassroomCourses, getCourses } from '@/api/basicData';
 import { useResponsive } from '@/hooks/useResponsive';
+import { useAppStore } from '@/store/app';
 
 export default function ClassroomTab() {
   const { message } = App.useApp();
@@ -17,6 +18,7 @@ export default function ClassroomTab() {
   const [allCourses, setAllCourses] = useState<any[]>([]);
   const [selectedCourseKeys, setSelectedCourseKeys] = useState<string[]>([]);
   const [form] = Form.useForm();
+  const currentSemester = useAppStore((s) => s.currentSemester);
 
   useEffect(() => {
     getCourses({ page: 1, page_size: 200 }).then((res) => setAllCourses(res.items || []));
@@ -84,7 +86,7 @@ export default function ClassroomTab() {
         columns={columns}
         actionRef={actionRef}
         request={async (params) => {
-          const result = await getClassrooms({ page: params.current || 1, page_size: params.pageSize || 10, name: params.name, type: params.type });
+          const result = await getClassrooms({ page: params.current || 1, page_size: params.pageSize || 10, name: params.name, type: params.type, semester_id: currentSemester || undefined });
           return { data: result.items, total: result.total, success: true };
         }}
         rowKey="id"
@@ -102,7 +104,7 @@ export default function ClassroomTab() {
           try {
             const values = await form.validateFields();
             if (editData) { await updateClassroom(editData.id, values); message.success('更新成功'); }
-            else { await createClassroom(values); message.success('创建成功'); }
+            else { await createClassroom({ ...values, semester_id: currentSemester }); message.success('创建成功'); }
             actionRef.current?.reload(); setFormOpen(false); setEditData(null);
           } catch { message.error('操作失败'); }
         }}

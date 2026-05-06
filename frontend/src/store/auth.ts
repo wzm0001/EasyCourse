@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { UserInfo, LoginRequest, LoginResponse } from '@/types/auth';
 import api from '@/api';
 import { getMe } from '@/api/auth';
+import { useAppStore } from './app';
 
 interface AuthState {
   token: string | null;
@@ -36,6 +37,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user,
       isAuthenticated: true,
     });
+    useAppStore.getState().fetchActiveSemester();
   },
 
   logout: () => {
@@ -49,6 +51,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user: null,
       isAuthenticated: false,
     });
+    useAppStore.getState().setCurrentSemester('');
   },
 
   setUser: (user: UserInfo) => {

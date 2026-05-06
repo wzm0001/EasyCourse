@@ -1,8 +1,12 @@
-import { post, put, getPage } from '@/utils/request';
+import { get, post, put, getPage } from '@/utils/request';
 import type { PageRequest } from '@/api/types';
 
 export function getSemesters(params: PageRequest & Record<string, any>) {
   return getPage<any>('/semesters', params);
+}
+
+export function getActiveSemester() {
+  return get<any>('/semesters/active');
 }
 
 export function createSemester(data: any) {

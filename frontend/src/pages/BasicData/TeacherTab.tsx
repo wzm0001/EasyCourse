@@ -5,6 +5,7 @@ import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getTeachers, createTeacher, updateTeacher, deleteTeacher, getTeacherCourses, setTeacherCourses, getCourses } from '@/api/basicData';
 import { useResponsive } from '@/hooks/useResponsive';
+import { useAppStore } from '@/store/app';
 
 export default function TeacherTab() {
   const { message } = App.useApp();
@@ -17,6 +18,7 @@ export default function TeacherTab() {
   const [allCourses, setAllCourses] = useState<any[]>([]);
   const [selectedCourseKeys, setSelectedCourseKeys] = useState<string[]>([]);
   const [form] = Form.useForm();
+  const currentSemester = useAppStore((s) => s.currentSemester);
 
   useEffect(() => {
     getCourses({ page: 1, page_size: 200 }).then((res) => setAllCourses(res.items || []));
@@ -73,7 +75,7 @@ export default function TeacherTab() {
         columns={columns}
         actionRef={actionRef}
         request={async (params) => {
-          const result = await getTeachers({ page: params.current || 1, page_size: params.pageSize || 10, real_name: params.real_name, code: params.code });
+          const result = await getTeachers({ page: params.current || 1, page_size: params.pageSize || 10, real_name: params.real_name, code: params.code, semester_id: currentSemester || undefined });
           return { data: result.items, total: result.total, success: true };
         }}
         rowKey="id"
@@ -91,7 +93,7 @@ export default function TeacherTab() {
           try {
             const values = await form.validateFields();
             if (editData) { await updateTeacher(editData.id, values); message.success('更新成功'); }
-            else { await createTeacher(values); message.success('创建成功'); }
+            else { await createTeacher({ ...values, semester_id: currentSemester }); message.success('创建成功'); }
             actionRef.current?.reload(); setFormOpen(false); setEditData(null);
           } catch { message.error('操作失败'); }
         }}

@@ -20,6 +20,21 @@ from app.middleware.tenant import get_tenant_filter
 router = APIRouter(prefix="/semesters", tags=["学期管理"])
 
 
+@router.get("/active", response_model=APIResponse[SemesterInfo])
+async def get_active_semester(
+    current_user: User = Depends(get_current_user_dependency),
+    db: AsyncSession = Depends(get_db),
+):
+    tenant = get_tenant_filter(current_user)
+    if tenant.school_id is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    repo = SemesterRepository(db)
+    active = await repo.get_active(tenant.school_id)
+    if not active:
+        return APIResponse.success(data=None)
+    return APIResponse.success(data=SemesterInfo.from_orm(active))
+
+
 @router.get("", response_model=APIResponse[PageResponse[SemesterInfo]])
 async def list_semesters(
     page: int = 1,

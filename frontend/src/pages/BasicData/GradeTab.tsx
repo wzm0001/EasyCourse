@@ -5,6 +5,7 @@ import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getGrades, createGrade, updateGrade, deleteGrade } from '@/api/basicData';
 import { useResponsive } from '@/hooks/useResponsive';
+import { useAppStore } from '@/store/app';
 
 export default function GradeTab() {
   const { message } = App.useApp();
@@ -13,6 +14,7 @@ export default function GradeTab() {
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
   const [form] = Form.useForm();
+  const currentSemester = useAppStore((s) => s.currentSemester);
 
   const columns: ProColumns<any>[] = [
     { title: '年级名称', dataIndex: 'name', width: 200 },
@@ -42,7 +44,7 @@ export default function GradeTab() {
         columns={columns}
         actionRef={actionRef}
         request={async (params) => {
-          const result = await getGrades({ page: params.current || 1, page_size: params.pageSize || 10, name: params.name });
+          const result = await getGrades({ page: params.current || 1, page_size: params.pageSize || 10, name: params.name, semester_id: currentSemester || undefined });
           return { data: result.items, total: result.total, success: true };
         }}
         rowKey="id"
@@ -60,7 +62,7 @@ export default function GradeTab() {
           try {
             const values = await form.validateFields();
             if (editData) { await updateGrade(editData.id, values); message.success('更新成功'); }
-            else { await createGrade(values); message.success('创建成功'); }
+            else { await createGrade({ ...values, semester_id: currentSemester }); message.success('创建成功'); }
             actionRef.current?.reload(); setFormOpen(false); setEditData(null);
           } catch { message.error('操作失败'); }
         }}
