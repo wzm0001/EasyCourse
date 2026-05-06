@@ -192,6 +192,7 @@ export default function SchoolManage() {
           onChange: setSelectedRowKeys,
         }}
         tableAlertOptionRender={false}
+        tableAlertRender={false}
         request={async (params) => {
           const result = await getSchools({
             page: params.current || 1,
