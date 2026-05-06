@@ -183,19 +183,6 @@ export default function SchoolManage() {
           selectedRowKeys,
           onChange: setSelectedRowKeys,
         }}
-        tableAlertOptionRender={() => (
-          <Space size="middle">
-            <Button
-              type="primary"
-              danger
-              icon={<ReloadOutlined />}
-              disabled={selectedRowKeys.length === 0}
-              onClick={handleBatchResetPassword}
-            >
-              批量重置密码 {selectedRowKeys.length > 0 ? `(${selectedRowKeys.length})` : ''}
-            </Button>
-          </Space>
-        )}
         request={async (params) => {
           const result = await getSchools({
             page: params.current || 1,
@@ -224,6 +211,15 @@ export default function SchoolManage() {
             }}
           >
             新增学校
+          </Button>,
+          <Button
+            key="batch-reset"
+            danger
+            icon={<ReloadOutlined />}
+            disabled={selectedRowKeys.length === 0}
+            onClick={handleBatchResetPassword}
+          >
+            批量重置密码 {selectedRowKeys.length > 0 ? `(${selectedRowKeys.length})` : ''}
           </Button>,
         ]}
         pagination={{ defaultPageSize: 10 }}
