@@ -53,7 +53,7 @@ export default function SchoolForm({ open, editData, onClose, onSuccess }: Schoo
         initialValues={editData || {}}
         preserve={false}
       >
-        <Form.Item name="name" label="学校名称" rules={[{ required: true, message: '请输入学校名称' }]}>
+        <Form.Item name="name" label="学校名称" rules={[{ required: true, message: '请输入学校名称' }]} extra="学校名称将作为登录用户名">
           <Input />
         </Form.Item>
         <Form.Item
@@ -64,6 +64,7 @@ export default function SchoolForm({ open, editData, onClose, onSuccess }: Schoo
             { len: 18, message: '统一社会信用代码为18位' },
             { pattern: /^[0-9A-Z]+$/, message: '仅允许大写字母和数字' },
           ]}
+          extra="统一社会信用代码用于学校资质认证，不可修改"
         >
           <Input disabled={isEdit} placeholder="请输入18位统一社会信用代码" style={{ textTransform: 'uppercase' }} />
         </Form.Item>

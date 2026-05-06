@@ -65,11 +65,11 @@ async def register(request: SchoolCreate, db: AsyncSession = Depends(get_db)):
             detail="密码强度不足：至少8位，需包含大小写字母和数字",
         )
     user_repo = UserRepository(db)
-    existing = await user_repo.get_by_username(request.code)
+    existing = await user_repo.get_by_username(request.name)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="该统一社会信用代码已被注册",
+            detail="该学校名称已被注册",
         )
     school_repo = SchoolRepository(db)
     existing_school = await school_repo.get_by_code(request.code)
@@ -81,7 +81,7 @@ async def register(request: SchoolCreate, db: AsyncSession = Depends(get_db)):
     from app.services.auth import get_password_hash
     school = await register_school(request.model_dump(), db)
     admin_user = User(
-        username=request.code,
+        username=request.name,
         password_hash=get_password_hash(request.password),
         real_name=request.contact_person,
         role=UserRole.SCHOOL_ADMIN,

@@ -220,7 +220,7 @@ export default function Login() {
         destroyOnClose
       >
         <div style={{ marginBottom: 16, color: '#666', fontSize: 13 }}>
-          请填写学校信息提交申请，管理员审批通过后即可使用统一社会信用代码和设置的密码登录系统
+          请填写学校信息提交申请，管理员审批通过后即可使用学校名称和设置的密码登录系统
         </div>
         <Form
           layout="vertical"
@@ -231,6 +231,7 @@ export default function Login() {
             name="name"
             label="学校名称"
             rules={[{ required: true, message: '请输入学校名称' }]}
+            extra="学校名称将作为登录用户名"
           >
             <Input prefix={<BankOutlined />} placeholder="请输入学校名称" />
           </Form.Item>
@@ -242,7 +243,7 @@ export default function Login() {
               { len: 18, message: '统一社会信用代码为18位' },
               { pattern: /^[0-9A-Z]+$/, message: '仅允许大写字母和数字' },
             ]}
-            extra="统一社会信用代码将作为登录用户名，不可修改"
+            extra="统一社会信用代码用于学校资质认证，不可修改"
           >
             <Input prefix={<KeyOutlined />} placeholder="请输入18位统一社会信用代码" style={{ textTransform: 'uppercase' }} />
           </Form.Item>
@@ -257,7 +258,7 @@ export default function Login() {
                 message: '密码需包含大小写字母和数字',
               },
             ]}
-            extra="审批通过后使用统一社会信用代码和此密码登录"
+            extra="审批通过后使用学校名称和此密码登录"
           >
             <Input.Password prefix={<LockOutlined />} placeholder="请输入登录密码" />
           </Form.Item>
