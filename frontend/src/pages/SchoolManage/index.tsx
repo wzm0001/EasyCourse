@@ -150,7 +150,8 @@ export default function SchoolManage() {
           };
         }}
         rowKey="id"
-        search={{ labelWidth: 'auto' }}
+        search={{ labelWidth: 'auto', defaultCollapsed: true }}
+        scroll={{ x: 1400 }}
         toolBarRender={() => [
           <Button
             key="add"

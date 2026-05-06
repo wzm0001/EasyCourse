@@ -37,7 +37,7 @@ export default function Dashboard() {
           </Space>
         </div>
 
-        <Row gutter={[16, 16]}>
+        <Row gutter={[16, 12]}>
           <Col xs={24} sm={12} lg={6}>
             <Card>
               <Statistic

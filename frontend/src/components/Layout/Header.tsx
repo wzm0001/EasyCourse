@@ -8,11 +8,13 @@ import {
   MenuUnfoldOutlined,
   SunOutlined,
   MoonOutlined,
+  MenuOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
 import { getUnreadCount } from '@/api/notifications';
+import { useResponsive } from '@/hooks/useResponsive';
 import type { MenuProps } from 'antd';
 import { useState, useEffect } from 'react';
 
@@ -20,7 +22,7 @@ const breadcrumbNameMap: Record<string, string> = {
   '/dashboard': '仪表盘',
   '/schools': '学校管理',
   '/approvals': '审批管理',
-  '/users': '用户管理',
+  '/users': '管理员用户管理',
   '/semesters': '学期管理',
   '/periods': '时间段配置',
   '/basic-data': '基础数据',
@@ -43,7 +45,8 @@ export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const { theme, toggleTheme, sidebarCollapsed, toggleSidebar } = useAppStore();
+  const { theme, toggleTheme, sidebarCollapsed, toggleSidebar, setMobileDrawerOpen } = useAppStore();
+  const { isMobile } = useResponsive();
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -62,32 +65,15 @@ export default function Header() {
     { title: '首页' },
     ...pathSnippets.map((_, index) => {
       const url = `/${pathSnippets.slice(0, index + 1).join('/')}`;
-      return {
-        title: breadcrumbNameMap[url] || url,
-      };
+      return { title: breadcrumbNameMap[url] || url };
     }),
   ];
 
   const userMenuItems: MenuProps['items'] = [
-    {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: '个人信息',
-    },
-    {
-      key: 'password',
-      icon: <KeyOutlined />,
-      label: '修改密码',
-    },
-    {
-      type: 'divider',
-    },
-    {
-      key: 'logout',
-      icon: <LogoutOutlined />,
-      label: '退出登录',
-      danger: true,
-    },
+    { key: 'profile', icon: <UserOutlined />, label: '个人信息' },
+    { key: 'password', icon: <KeyOutlined />, label: '修改密码' },
+    { type: 'divider' },
+    { key: 'logout', icon: <LogoutOutlined />, label: '退出登录', danger: true },
   ];
 
   const handleUserMenuClick: MenuProps['onClick'] = ({ key }) => {
@@ -105,43 +91,63 @@ export default function Header() {
     }
   };
 
+  const toggleIconSize = isMobile ? 22 : 18;
+
   return (
     <Layout.Header
       style={{
-        padding: '0 24px',
+        padding: isMobile ? '0 12px' : '0 24px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         background: theme === 'dark' ? '#141414' : '#fff',
         borderBottom: `1px solid ${theme === 'dark' ? '#303030' : '#f0f0f0'}`,
+        height: isMobile ? 56 : 64,
+        lineHeight: isMobile ? '56px' : '64px',
       }}
     >
       <Space size="middle">
-        <span
-          onClick={toggleSidebar}
-          style={{ fontSize: 18, cursor: 'pointer', lineHeight: '64px' }}
-        >
-          {sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-        </span>
-        <Breadcrumb items={breadcrumbItems} />
+        {isMobile ? (
+          <span
+            onClick={() => setMobileDrawerOpen(true)}
+            style={{ fontSize: toggleIconSize, cursor: 'pointer', lineHeight: 'inherit', padding: '8px' }}
+          >
+            <MenuOutlined />
+          </span>
+        ) : (
+          <span
+            onClick={toggleSidebar}
+            style={{ fontSize: toggleIconSize, cursor: 'pointer', lineHeight: 'inherit', padding: '8px' }}
+          >
+            {sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+          </span>
+        )}
+        {!isMobile && <Breadcrumb items={breadcrumbItems} />}
+        {isMobile && (
+          <span style={{ fontSize: 16, fontWeight: 600, color: theme === 'dark' ? '#fff' : '#333' }}>
+            {breadcrumbNameMap[location.pathname] || '智能排课系统'}
+          </span>
+        )}
       </Space>
 
-      <Space size="middle">
+      <Space size={isMobile ? 'small' : 'middle'}>
         <Badge count={unreadCount} size="small" onClick={() => navigate('/notifications')} style={{ cursor: 'pointer' }}>
-          <BellOutlined style={{ fontSize: 18, cursor: 'pointer' }} />
+          <BellOutlined style={{ fontSize: isMobile ? 20 : 18, cursor: 'pointer', padding: '4px' }} />
         </Badge>
 
-        <Switch
-          checked={theme === 'dark'}
-          onChange={toggleTheme}
-          checkedChildren={<MoonOutlined />}
-          unCheckedChildren={<SunOutlined />}
-        />
+        {!isMobile && (
+          <Switch
+            checked={theme === 'dark'}
+            onChange={toggleTheme}
+            checkedChildren={<MoonOutlined />}
+            unCheckedChildren={<SunOutlined />}
+          />
+        )}
 
         <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenuClick }} placement="bottomRight">
           <Space style={{ cursor: 'pointer' }}>
-            <Avatar icon={<UserOutlined />} />
-            <span>{user?.real_name || user?.username || '用户'}</span>
+            <Avatar icon={<UserOutlined />} size={isMobile ? 'small' : 'default'} />
+            {!isMobile && <span>{user?.real_name || user?.username || '用户'}</span>}
           </Space>
         </Dropdown>
       </Space>

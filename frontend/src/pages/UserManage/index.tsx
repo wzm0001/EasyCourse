@@ -44,7 +44,7 @@ export default function UserManage() {
         <Space>
           <Button
             type="link"
-            size="small"
+            size="middle"
             icon={<EditOutlined />}
             onClick={() => {
               setEditData(record);
@@ -56,7 +56,7 @@ export default function UserManage() {
           </Button>
           <Button
             type="link"
-            size="small"
+            size="middle"
             icon={<KeyOutlined />}
             onClick={() => {
               setResetUserId(record.id);
@@ -81,7 +81,7 @@ export default function UserManage() {
           >
             <Button
               type="link"
-              size="small"
+              size="middle"
               danger={record.is_active}
               icon={<StopOutlined />}
             >
@@ -112,7 +112,8 @@ export default function UserManage() {
           };
         }}
         rowKey="id"
-        search={{ labelWidth: 'auto' }}
+        search={{ labelWidth: 'auto', defaultCollapsed: true }}
+        scroll={{ x: 800 }}
         toolBarRender={() => [
           <Button
             key="add"
@@ -132,6 +133,8 @@ export default function UserManage() {
       <Modal
         title={editData ? '编辑管理员' : '新增管理员'}
         open={formOpen}
+        width={480}
+        style={{ top: 20 }}
         onCancel={() => {
           setFormOpen(false);
           setEditData(null);
@@ -189,6 +192,8 @@ export default function UserManage() {
       <Modal
         title={`重置密码 - ${resetUsername}`}
         open={resetOpen}
+        width={480}
+        style={{ top: 20 }}
         onCancel={() => setResetOpen(false)}
         onOk={async () => {
           try {

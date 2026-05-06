@@ -15,7 +15,7 @@ export default function ApprovalManage() {
     { title: '学校编码', dataIndex: 'code', width: 120 },
     {
       title: '学校类型',
-      dataIndex: 'type',
+      dataIndex: 'school_type',
       width: 120,
       valueEnum: {
         primary: { text: '小学' },
@@ -27,7 +27,7 @@ export default function ApprovalManage() {
     },
     { title: '省份', dataIndex: 'province', width: 80 },
     { title: '城市', dataIndex: 'city', width: 80 },
-    { title: '联系人', dataIndex: 'contact_name', width: 100 },
+    { title: '联系人', dataIndex: 'contact_person', width: 100 },
     { title: '联系电话', dataIndex: 'contact_phone', width: 130 },
     { title: '申请时间', dataIndex: 'created_at', width: 180, valueType: 'dateTime', search: false },
     {
@@ -86,12 +86,14 @@ export default function ApprovalManage() {
           };
         }}
         rowKey="id"
-        search={{ labelWidth: 'auto' }}
+        search={{ labelWidth: 'auto', defaultCollapsed: true }}
+        scroll={{ x: 1000 }}
         pagination={{ defaultPageSize: 10 }}
       />
       <Modal
         title="拒绝原因"
         open={rejectModal.open}
+        style={{ top: 20 }}
         onCancel={() => setRejectModal({ open: false, id: '' })}
         onOk={async () => {
           try {

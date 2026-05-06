@@ -11,7 +11,7 @@ export default function Profile() {
   return (
     <div>
       <Card title="个人信息">
-        <Descriptions column={2} bordered>
+        <Descriptions column={{ xs: 1, sm: 2 }} bordered>
           <Descriptions.Item label="用户名">{user?.username}</Descriptions.Item>
           <Descriptions.Item label="姓名">{user?.real_name || '-'}</Descriptions.Item>
           <Descriptions.Item label="角色">
@@ -28,6 +28,7 @@ export default function Profile() {
       <Modal
         title="修改密码"
         open={pwdOpen}
+        style={{ top: 20 }}
         onCancel={() => setPwdOpen(false)}
         onOk={async () => {
           try {

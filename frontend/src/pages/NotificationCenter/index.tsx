@@ -94,7 +94,8 @@ export default function NotificationCenter() {
           return { data: result.items, total: result.total, success: true };
         }}
         rowKey="id"
-        search={{ labelWidth: 'auto' }}
+        search={{ labelWidth: 'auto', defaultCollapsed: true }}
+        scroll={{ x: 800 }}
         pagination={{ defaultPageSize: 10 }}
         rowSelection={{
           selectedRowKeys,

@@ -33,6 +33,8 @@ export default function SchoolForm({ open, editData, onClose, onSuccess }: Schoo
           message.error('操作失败');
         }
       }}
+      width={520}
+      style={{ top: 20 }}
       destroyOnClose
     >
       <Form

@@ -82,7 +82,8 @@ export default function BackupManage() {
           return { data: result.items, total: result.total, success: true };
         }}
         rowKey="id"
-        search={{ labelWidth: 'auto' }}
+        search={{ labelWidth: 'auto', defaultCollapsed: true }}
+        scroll={{ x: 800 }}
         toolBarRender={() => [
           <Button
             key="add"
@@ -98,6 +99,7 @@ export default function BackupManage() {
       <Modal
         title="创建备份"
         open={remarkOpen}
+        style={{ top: 20 }}
         onCancel={() => setRemarkOpen(false)}
         onOk={async () => {
           try {
