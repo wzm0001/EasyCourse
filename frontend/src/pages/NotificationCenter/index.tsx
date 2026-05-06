@@ -1,13 +1,21 @@
 import { useRef, useState } from 'react';
-import { Card, Button, Space, message } from 'antd';
+import { Card, Button, Space, Tag, message } from 'antd';
 import { CheckOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { getNotifications, markAsRead, markAllAsRead } from '@/api/notifications';
+import { getNotifications, markAsRead, markAllAsRead, getUnreadCount } from '@/api/notifications';
+import { useAppStore } from '@/store/app';
 
 export default function NotificationCenter() {
   const actionRef = useRef<ActionType>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
+  const { unreadCount, setUnreadCount } = useAppStore();
+
+  const refreshUnreadCount = () => {
+    getUnreadCount()
+      .then((res) => setUnreadCount(res.data || 0))
+      .catch(() => {});
+  };
 
   const columns: ProColumns<any>[] = [
     {
@@ -19,8 +27,23 @@ export default function NotificationCenter() {
         false: { text: '未读', status: 'Processing' },
       },
     },
-    { title: '标题', dataIndex: 'title', width: 200, ellipsis: true },
-    { title: '内容', dataIndex: 'content', width: 300, ellipsis: true, search: false },
+    {
+      title: '标题',
+      dataIndex: 'title',
+      width: 200,
+      ellipsis: true,
+      render: (_, record) =>
+        !record.is_read ? <span style={{ fontWeight: 600 }}>{record.title}</span> : record.title,
+    },
+    {
+      title: '内容',
+      dataIndex: 'content',
+      width: 300,
+      ellipsis: true,
+      search: false,
+      render: (_, record) =>
+        !record.is_read ? <span style={{ fontWeight: 500 }}>{record.content}</span> : record.content,
+    },
     {
       title: '类型',
       dataIndex: 'type',
@@ -48,6 +71,7 @@ export default function NotificationCenter() {
                   await markAsRead(record.id);
                   message.success('已标记为已读');
                   actionRef.current?.reload();
+                  refreshUnreadCount();
                 } catch {
                   message.error('操作失败');
                 }
@@ -63,15 +87,24 @@ export default function NotificationCenter() {
 
   return (
     <Card
-      title="通知中心"
+      title={
+        <Space>
+          <span>通知中心</span>
+          {unreadCount > 0 && (
+            <Tag color="red">{unreadCount} 条未读</Tag>
+          )}
+        </Space>
+      }
       extra={
         <Button
           icon={<CheckCircleOutlined />}
+          disabled={unreadCount === 0}
           onClick={async () => {
             try {
               await markAllAsRead();
               message.success('已全部标记为已读');
               actionRef.current?.reload();
+              refreshUnreadCount();
             } catch {
               message.error('操作失败');
             }
@@ -91,6 +124,7 @@ export default function NotificationCenter() {
             is_read: params.is_read,
             type: params.type,
           });
+          refreshUnreadCount();
           return { data: result.items, total: result.total, success: true };
         }}
         rowKey="id"
@@ -101,6 +135,7 @@ export default function NotificationCenter() {
           selectedRowKeys,
           onChange: (keys) => setSelectedRowKeys(keys as string[]),
         }}
+        tableAlertRender={false}
       />
     </Card>
   );

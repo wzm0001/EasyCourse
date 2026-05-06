@@ -5,10 +5,12 @@ interface AppState {
   sidebarCollapsed: boolean;
   mobileDrawerOpen: boolean;
   currentSemester: string | null;
+  unreadCount: number;
   toggleTheme: () => void;
   toggleSidebar: () => void;
   setMobileDrawerOpen: (open: boolean) => void;
   setCurrentSemester: (semester: string) => void;
+  setUnreadCount: (count: number) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -16,6 +18,7 @@ export const useAppStore = create<AppState>((set) => ({
   sidebarCollapsed: false,
   mobileDrawerOpen: false,
   currentSemester: null,
+  unreadCount: 0,
 
   toggleTheme: () =>
     set((state) => ({
@@ -32,4 +35,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   setCurrentSemester: (semester: string) =>
     set({ currentSemester: semester }),
+
+  setUnreadCount: (count: number) =>
+    set({ unreadCount: count }),
 }));

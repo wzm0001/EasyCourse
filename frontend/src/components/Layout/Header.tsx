@@ -13,10 +13,8 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
-import { getUnreadCount } from '@/api/notifications';
 import { useResponsive } from '@/hooks/useResponsive';
 import type { MenuProps } from 'antd';
-import { useState, useEffect } from 'react';
 
 const breadcrumbNameMap: Record<string, string> = {
   '/dashboard': '仪表盘',
@@ -45,20 +43,8 @@ export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const { theme, toggleTheme, sidebarCollapsed, toggleSidebar, setMobileDrawerOpen } = useAppStore();
+  const { theme, toggleTheme, sidebarCollapsed, toggleSidebar, setMobileDrawerOpen, unreadCount } = useAppStore();
   const { isMobile } = useResponsive();
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    const fetchUnread = () => {
-      getUnreadCount()
-        .then((res) => setUnreadCount(res.data || 0))
-        .catch(() => {});
-    };
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   const pathSnippets = location.pathname.split('/').filter((i) => i);
   const breadcrumbItems = [
@@ -131,7 +117,7 @@ export default function Header() {
       </Space>
 
       <Space size={isMobile ? 'small' : 'middle'}>
-        <Badge count={unreadCount} size="small" onClick={() => navigate('/notifications')} style={{ cursor: 'pointer' }}>
+        <Badge count={unreadCount} onClick={() => navigate('/notifications')} style={{ cursor: 'pointer' }}>
           <BellOutlined style={{ fontSize: isMobile ? 20 : 18, cursor: 'pointer', padding: '4px' }} />
         </Badge>
 

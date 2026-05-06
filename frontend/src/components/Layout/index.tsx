@@ -4,12 +4,28 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import { useAppStore } from '@/store/app';
 import { useResponsive } from '@/hooks/useResponsive';
+import { getUnreadCount } from '@/api/notifications';
+import { useEffect } from 'react';
+import { useAuthStore } from '@/store/auth';
 
 const { Sider, Content } = Layout;
 
 export default function MainLayout() {
-  const { sidebarCollapsed, theme, mobileDrawerOpen, setMobileDrawerOpen } = useAppStore();
+  const { sidebarCollapsed, theme, mobileDrawerOpen, setMobileDrawerOpen, setUnreadCount } = useAppStore();
   const { isMobile } = useResponsive();
+  const token = useAuthStore((s) => s.token);
+
+  useEffect(() => {
+    if (!token) return;
+    const fetchUnread = () => {
+      getUnreadCount()
+        .then((res) => setUnreadCount(res.data || 0))
+        .catch(() => {});
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, [token]);
 
   const sidebarContent = <Sidebar onMenuClick={() => { if (isMobile) setMobileDrawerOpen(false); }} />;
 
