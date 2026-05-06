@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { message } from 'antd';
+import { getGlobalMessage } from '@/utils/globalMessage';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
@@ -41,6 +41,7 @@ api.interceptors.response.use(
       }
       return '请求失败';
     };
+    const msg = getGlobalMessage();
     switch (status) {
       case 401:
         if (error.config?.url?.includes('/auth/login')) {
@@ -49,17 +50,17 @@ api.interceptors.response.use(
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           window.location.href = '/login';
-          message.error('登录已过期，请重新登录');
+          msg.error('登录已过期，请重新登录');
         }
         break;
       case 403:
-        message.error('没有权限访问');
+        msg.error('没有权限访问');
         break;
       case 500:
-        message.error('服务器错误，请稍后重试');
+        msg.error('服务器错误，请稍后重试');
         break;
       default:
-        message.error(getErrMsg());
+        msg.error(getErrMsg());
     }
     return Promise.reject(error);
   }

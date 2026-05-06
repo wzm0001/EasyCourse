@@ -270,7 +270,7 @@ export default function SchoolManage() {
         destroyOnHidden
         width={isMobile ? '90vw' : 460}
       >
-        <Form form={resetForm} layout="vertical" preserve={false} style={{ marginTop: 16 }}>
+        <Form form={resetForm} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item name="passwordType" label="密码设置">
             <Radio.Group>
               <Radio value="default">使用默认密码（{DEFAULT_PASSWORD}）</Radio>

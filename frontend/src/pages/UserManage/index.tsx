@@ -257,7 +257,7 @@ export default function UserManage() {
         }}
         destroyOnHidden
       >
-        <Form form={form} layout="vertical" preserve={false} initialValues={editData || {}}>
+        <Form form={form} layout="vertical" initialValues={editData || {}}>
           {isSuperAdmin ? (
             <>
               <Form.Item name="username" label="用户名" rules={[{ required: true, message: '请输入用户名' }]}>
@@ -338,7 +338,7 @@ export default function UserManage() {
         okButtonProps={{ danger: true }}
         destroyOnHidden
       >
-        <Form form={resetForm} layout="vertical" preserve={false} style={{ marginTop: 16 }}>
+        <Form form={resetForm} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item name="passwordType" label="密码设置">
             <Radio.Group>
               <Radio value="default">使用默认密码（{DEFAULT_PASSWORD}）</Radio>

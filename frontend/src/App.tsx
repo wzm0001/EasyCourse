@@ -4,6 +4,7 @@ import { RouterProvider } from 'react-router-dom';
 import router from '@/router';
 import { useAppStore } from '@/store/app';
 import { lightTheme, darkTheme } from '@/styles/theme';
+import { setGlobalMessage } from '@/utils/globalMessage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -13,6 +14,12 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function AppInner() {
+  const { message } = App.useApp();
+  setGlobalMessage(message);
+  return <RouterProvider router={router} />;
+}
 
 export default function AppEntry() {
   const appTheme = useAppStore((s) => s.theme);
@@ -29,7 +36,7 @@ export default function AppEntry() {
         }}
       >
         <App>
-          <RouterProvider router={router} />
+          <AppInner />
         </App>
       </ConfigProvider>
     </QueryClientProvider>
