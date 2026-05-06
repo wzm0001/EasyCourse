@@ -31,6 +31,16 @@ api.interceptors.response.use(
   },
   (error) => {
     const status = error.response?.status;
+    const getErrMsg = () => {
+      const data = error.response?.data;
+      if (typeof data?.detail === 'string') return data.detail;
+      if (typeof data?.message === 'string') return data.message;
+      if (Array.isArray(data?.detail)) {
+        const first = data.detail[0];
+        if (first && typeof first.msg === 'string') return first.msg;
+      }
+      return '请求失败';
+    };
     switch (status) {
       case 401:
         if (error.config?.url?.includes('/auth/login')) {
@@ -49,7 +59,7 @@ api.interceptors.response.use(
         message.error('服务器错误，请稍后重试');
         break;
       default:
-        message.error(error.response?.data?.message || '请求失败');
+        message.error(getErrMsg());
     }
     return Promise.reject(error);
   }

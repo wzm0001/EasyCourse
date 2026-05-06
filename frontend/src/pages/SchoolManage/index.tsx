@@ -57,8 +57,11 @@ export default function SchoolManage() {
       }
       setResetModalOpen(false);
     } catch (e: any) {
-      if (e?.response?.data?.detail) {
-        message.error(e.response.data.detail);
+      const detail = e?.response?.data?.detail;
+      if (typeof detail === 'string') {
+        message.error(detail);
+      } else if (Array.isArray(detail) && detail[0]?.msg) {
+        message.error(detail[0].msg);
       }
     }
   };
