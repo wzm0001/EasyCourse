@@ -264,37 +264,17 @@ export default function SchoolManage() {
           >
             {({ getFieldValue }) =>
               getFieldValue('passwordType') === 'custom' ? (
-                <>
-                  <Form.Item
-                    name="customPassword"
-                    label="新密码"
-                    rules={[
-                      { required: true, message: '请输入新密码' },
-                      { min: 8, message: '密码至少8位' },
-                      { pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/, message: '密码需包含大小写字母和数字' },
-                    ]}
-                  >
-                    <Input.Password placeholder="请输入新密码" />
-                  </Form.Item>
-                  <Form.Item
-                    name="confirmPassword"
-                    label="确认密码"
-                    dependencies={['customPassword']}
-                    rules={[
-                      { required: true, message: '请确认新密码' },
-                      ({ getFieldValue }) => ({
-                        validator(_, value) {
-                          if (!value || getFieldValue('customPassword') === value) {
-                            return Promise.resolve();
-                          }
-                          return Promise.reject(new Error('两次输入的密码不一致'));
-                        },
-                      }),
-                    ]}
-                  >
-                    <Input.Password placeholder="请再次输入新密码" />
-                  </Form.Item>
-                </>
+                <Form.Item
+                  name="customPassword"
+                  label="新密码"
+                  rules={[
+                    { required: true, message: '请输入新密码' },
+                    { min: 8, message: '密码至少8位' },
+                    { pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/, message: '密码需包含大小写字母和数字' },
+                  ]}
+                >
+                  <Input.Password placeholder="请输入新密码" />
+                </Form.Item>
               ) : null
             }
           </Form.Item>

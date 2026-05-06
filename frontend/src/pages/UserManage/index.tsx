@@ -220,25 +220,7 @@ export default function UserManage() {
               },
             ]}
           >
-            <Input.Password />
-          </Form.Item>
-          <Form.Item
-            name="confirm_password"
-            label="确认密码"
-            dependencies={['new_password']}
-            rules={[
-              { required: true, message: '请确认新密码' },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue('new_password') === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error('两次输入的密码不一致'));
-                },
-              }),
-            ]}
-          >
-            <Input.Password />
+            <Input.Password placeholder="请输入新密码" />
           </Form.Item>
         </Form>
       </Modal>
