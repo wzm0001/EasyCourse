@@ -11,7 +11,9 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const remember = localStorage.getItem('remember') === 'true';
+    const storage = remember ? localStorage : sessionStorage;
+    const token = storage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,6 +33,10 @@ api.interceptors.response.use(
   },
   (error) => {
     const status = error.response?.status;
+    const silent = error.config?.headers?.['X-Silent'] || error.config?.params?._silent;
+    if (silent) {
+      return Promise.reject(error);
+    }
     const getErrMsg = () => {
       const data = error.response?.data;
       if (typeof data?.detail === 'string') return data.detail;
@@ -47,14 +53,21 @@ api.interceptors.response.use(
         if (error.config?.url?.includes('/auth/login')) {
           return Promise.reject(error);
         } else {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+          const remember = localStorage.getItem('remember') === 'true';
+          const storage = remember ? localStorage : sessionStorage;
+          storage.removeItem('token');
+          storage.removeItem('user');
           window.location.href = '/login';
           msg.error('登录已过期，请重新登录');
         }
         break;
       case 403:
         msg.error('没有权限访问');
+        break;
+      case 404:
+        break;
+      case 422:
+        msg.error(getErrMsg());
         break;
       case 500:
         msg.error('服务器错误，请稍后重试');

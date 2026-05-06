@@ -84,7 +84,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { token, isAuthenticated } = get();
     if (!token || !isAuthenticated) return;
     try {
-      const res = await getMe();
+      const res = await getMe({ _silent: true } as any);
       const userData = (res as any)?.data || res;
       if (userData) {
         const remember = localStorage.getItem('remember') === 'true';

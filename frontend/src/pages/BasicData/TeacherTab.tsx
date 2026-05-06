@@ -98,7 +98,7 @@ export default function TeacherTab() {
         destroyOnHidden
         width={isMobile ? '90vw' : 520}
       >
-        <Form form={form} layout="vertical" preserve={false}>
+        <Form form={form} layout="vertical">
           <Form.Item name="real_name" label="教师姓名" rules={[{ required: true, message: '请输入教师姓名' }]}><Input /></Form.Item>
           <Form.Item name="code" label="工号" rules={[{ required: true, message: '请输入工号' }]}><Input /></Form.Item>
           <Form.Item name="gender" label="性别">

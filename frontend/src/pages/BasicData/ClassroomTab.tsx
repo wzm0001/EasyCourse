@@ -109,7 +109,7 @@ export default function ClassroomTab() {
         destroyOnHidden
         width={isMobile ? '90vw' : 520}
       >
-        <Form form={form} layout="vertical" preserve={false}>
+        <Form form={form} layout="vertical">
           <Form.Item name="name" label="教室名称" rules={[{ required: true, message: '请输入教室名称' }]}><Input /></Form.Item>
           <Form.Item name="code" label="教室编码" rules={[{ required: true, message: '请输入教室编码' }]}><Input /></Form.Item>
           <Form.Item name="type" label="教室类型" rules={[{ required: true, message: '请选择教室类型' }]}>

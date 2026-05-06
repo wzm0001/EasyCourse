@@ -87,7 +87,7 @@ export default function TeachingClass({ embedded }: { embedded?: boolean } = {})
         }}
         destroyOnHidden
       >
-        <Form form={form} layout="vertical" preserve={false}>
+        <Form form={form} layout="vertical">
           <Form.Item name="name" label="教学班名称" rules={[{ required: true, message: '请输入名称' }]}>
             <Input />
           </Form.Item>

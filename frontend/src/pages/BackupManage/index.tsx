@@ -118,7 +118,7 @@ export default function BackupManage() {
         destroyOnHidden
         width={isMobile ? '90vw' : 520}
       >
-        <Form form={form} layout="vertical" preserve={false}>
+        <Form form={form} layout="vertical">
           <Form.Item name="remark" label="备注">
             <Input.TextArea rows={3} placeholder="请输入备份备注" />
           </Form.Item>

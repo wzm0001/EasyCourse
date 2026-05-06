@@ -75,7 +75,7 @@ export default function CourseTab() {
         destroyOnHidden
         width={isMobile ? '90vw' : 520}
       >
-        <Form form={form} layout="vertical" preserve={false}>
+        <Form form={form} layout="vertical">
           <Form.Item name="name" label="课程名称" rules={[{ required: true, message: '请输入课程名称' }]}><Input /></Form.Item>
           <Form.Item name="code" label="课程编码" rules={[{ required: true, message: '请输入课程编码' }]}><Input /></Form.Item>
           <Form.Item name="type" label="课程类型" rules={[{ required: true, message: '请选择课程类型' }]}>

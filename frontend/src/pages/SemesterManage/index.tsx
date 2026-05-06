@@ -186,7 +186,7 @@ export default function SemesterManage({ embedded }: { embedded?: boolean } = {}
         }}
         destroyOnHidden
       >
-        <Form form={form} layout="vertical" preserve={false}>
+        <Form form={form} layout="vertical">
           <Form.Item name="name" label="学期名称" rules={[{ required: true, message: '请输入学期名称' }]}>
             <Input placeholder="如：2025-2026学年第一学期" />
           </Form.Item>
@@ -217,7 +217,7 @@ export default function SemesterManage({ embedded }: { embedded?: boolean } = {}
         }}
         destroyOnHidden
       >
-        <Form form={copyForm} layout="vertical" preserve={false}>
+        <Form form={copyForm} layout="vertical">
           <Form.Item name="name" label="新学期名称" rules={[{ required: true, message: '请输入学期名称' }]}>
             <Input />
           </Form.Item>

@@ -38,7 +38,7 @@ export default function ConstraintForm({ open, editData, onClose, onOk }: Constr
       destroyOnHidden
       width={isMobile ? '90vw' : 520}
     >
-      <Form form={form} layout="vertical" initialValues={editData || { enabled: true }} preserve={false}>
+      <Form form={form} layout="vertical" initialValues={editData || { enabled: true }}>
         <Form.Item name="name" label="约束名称" rules={[{ required: true, message: '请输入约束名称' }]}>
           <Input />
         </Form.Item>

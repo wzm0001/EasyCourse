@@ -67,7 +67,7 @@ export default function GradeTab() {
         destroyOnHidden
         width={isMobile ? '90vw' : 520}
       >
-        <Form form={form} layout="vertical" preserve={false}>
+        <Form form={form} layout="vertical">
           <Form.Item name="name" label="年级名称" rules={[{ required: true, message: '请输入年级名称' }]}><Input /></Form.Item>
           <Form.Item name="code" label="年级编码" rules={[{ required: true, message: '请输入年级编码' }]}><Input /></Form.Item>
           <Form.Item name="order" label="年级序号" rules={[{ required: true, message: '请输入年级序号' }]}><InputNumber min={1} style={{ width: '100%' }} /></Form.Item>

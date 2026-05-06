@@ -64,7 +64,7 @@ export default function SchoolForm({ open, editData, onClose, onSuccess }: Schoo
         form={form}
         layout="vertical"
         initialValues={editData || {}}
-        preserve={false}
+       
       >
         <Form.Item name="name" label="学校名称" rules={[{ required: true, message: '请输入学校名称' }]} extra="学校名称将作为登录用户名">
           <Input />

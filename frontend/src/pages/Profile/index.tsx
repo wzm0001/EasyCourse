@@ -54,7 +54,7 @@ export default function Profile() {
         destroyOnHidden
         width={isMobile ? '90vw' : 460}
       >
-        <Form form={form} layout="vertical" preserve={false}>
+        <Form form={form} layout="vertical">
           <Form.Item name="real_name" label="姓名" rules={[{ required: true, message: '请输入姓名' }]}>
             <Input />
           </Form.Item>
@@ -93,7 +93,7 @@ export default function Profile() {
         }}
         destroyOnHidden
       >
-        <Form form={pwdForm} layout="vertical" preserve={false}>
+        <Form form={pwdForm} layout="vertical">
           <Form.Item name="old_password" label="旧密码" rules={[{ required: true, message: '请输入旧密码' }]}>
             <Input.Password />
           </Form.Item>

@@ -26,7 +26,7 @@ export default function CustomExportModal({ open, onClose, onExport }: CustomExp
       destroyOnHidden
       width={isMobile ? '90vw' : 520}
     >
-      <Form form={form} layout="vertical" preserve={false}>
+      <Form form={form} layout="vertical">
         <Form.Item name="export_type" label="导出类型" rules={[{ required: true, message: '请选择导出类型' }]}>
           <Select options={[
             { label: '班级课表', value: 'class' },

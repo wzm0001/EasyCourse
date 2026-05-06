@@ -75,7 +75,7 @@ export default function ArrangementTab() {
         destroyOnHidden
         width={isMobile ? '90vw' : 520}
       >
-        <Form form={form} layout="vertical" preserve={false}>
+        <Form form={form} layout="vertical">
           <Form.Item name="grade_id" label="年级" rules={[{ required: true, message: '请选择年级' }]}>
             <Select options={grades.map((g) => ({ label: g.name, value: g.id }))} placeholder="请选择年级" />
           </Form.Item>

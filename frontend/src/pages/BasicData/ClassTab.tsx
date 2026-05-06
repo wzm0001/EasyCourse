@@ -74,7 +74,7 @@ export default function ClassTab() {
         destroyOnHidden
         width={isMobile ? '90vw' : 520}
       >
-        <Form form={form} layout="vertical" preserve={false}>
+        <Form form={form} layout="vertical">
           <Form.Item name="name" label="班级名称" rules={[{ required: true, message: '请输入班级名称' }]}><Input /></Form.Item>
           <Form.Item name="code" label="班级编码" rules={[{ required: true, message: '请输入班级编码' }]}><Input /></Form.Item>
           <Form.Item name="grade_id" label="所属年级" rules={[{ required: true, message: '请选择年级' }]}>
