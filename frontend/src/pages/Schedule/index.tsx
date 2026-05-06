@@ -226,7 +226,7 @@ export default function Schedule({ embedded }: { embedded?: boolean } = {}) {
 
   const content = (
     <>
-      <ScheduleStepper />
+      {!embedded && <ScheduleStepper />}
 
       <Space style={{ marginBottom: 16 }} wrap>
         <span>学期：</span>
