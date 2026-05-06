@@ -109,6 +109,54 @@ async def get_uploaded_file(filename: str):
     return FileResponse(filepath)
 
 
+@router.post("", response_model=APIResponse)
+async def create_school(
+    request: SchoolCreate,
+    current_user: User = Depends(require_super_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    school_repo = SchoolRepository(db)
+    existing_school = await school_repo.get_by_code(request.code)
+    if existing_school:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="该统一社会信用代码已被注册",
+        )
+    user_repo = UserRepository(db)
+    existing_user = await user_repo.get_by_username(request.name)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="该学校名称已被注册",
+        )
+    school = School(
+        name=request.name,
+        code=request.code,
+        address=request.address,
+        contact_person=request.contact_person,
+        contact_phone=request.contact_phone,
+        status=AccountStatus.ACTIVE,
+        school_type=request.school_type,
+        province=request.province,
+        city=request.city,
+        district=request.district,
+        attachment=request.attachment,
+    )
+    school = await school_repo.create(school)
+    pwd = request.password if request.password else DEFAULT_PASSWORD
+    admin_user = User(
+        username=request.name,
+        password_hash=get_password_hash(pwd),
+        real_name=request.contact_person,
+        role=UserRole.SCHOOL_ADMIN,
+        school_id=school.id,
+        phone=request.contact_phone,
+        is_active=True,
+    )
+    await user_repo.create(admin_user)
+    return APIResponse.success(message=f"学校创建成功，管理员密码为 {pwd}")
+
+
 @router.get("", response_model=APIResponse[PageResponse[SchoolDetailInfo]])
 async def get_schools(
     page: int = 1,

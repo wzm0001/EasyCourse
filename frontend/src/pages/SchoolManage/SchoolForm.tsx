@@ -1,4 +1,4 @@
-import { Modal, Form, Input, Select, Upload, Button, message } from 'antd';
+import { Modal, Form, Input, Select, Upload, Button, App } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { createSchool, updateSchool } from '@/api/schools';
 import api from '@/api';
@@ -13,6 +13,7 @@ interface SchoolFormProps {
 
 export default function SchoolForm({ open, editData, onClose, onSuccess }: SchoolFormProps) {
   const [form] = Form.useForm();
+  const { message } = App.useApp();
   const isEdit = !!editData;
   const [attachmentUrl, setAttachmentUrl] = useState(editData?.attachment || '');
 
@@ -34,13 +35,20 @@ export default function SchoolForm({ open, editData, onClose, onSuccess }: Schoo
             await updateSchool(editData.id, data);
             message.success('更新成功');
           } else {
-            await createSchool(data);
-            message.success('创建成功');
+            const res = await createSchool(data);
+            message.success((res as any)?.message || '创建成功');
           }
           onSuccess();
           onClose();
-        } catch {
-          message.error('操作失败');
+        } catch (e: any) {
+          const detail = e?.response?.data?.detail;
+          if (detail) {
+            message.error(detail);
+          } else if (e?.errorFields) {
+            message.error('请检查表单填写是否正确');
+          } else {
+            message.error('操作失败');
+          }
         }
       }}
       width={520}
