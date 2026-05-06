@@ -32,3 +32,11 @@ export function rejectSchool(id: string, reason?: string) {
 export function deleteSchool(id: string) {
   return del<any>(`/schools/${id}`);
 }
+
+export function resetSchoolPassword(id: string) {
+  return post<any>(`/schools/${id}/reset-password`);
+}
+
+export function batchResetSchoolPassword(schoolIds: string[]) {
+  return post<any>('/schools/batch-reset-password', { school_ids: schoolIds });
+}

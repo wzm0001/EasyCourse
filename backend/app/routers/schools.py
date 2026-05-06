@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel
+from typing import List
 
 from app.database import get_db
 from app.models.user import User, UserRole, AccountStatus, School
@@ -7,9 +9,16 @@ from app.schemas.common import APIResponse, PageResponse
 from app.schemas.user import SchoolInfo, SchoolUpdate, ApprovalAction, SchoolDetailInfo
 from app.repositories.user import SchoolRepository, UserRepository, ApprovalRepository
 from app.services.user import approve_school, reject_school, request_data_change
+from app.services.auth import get_password_hash
 from app.middleware.auth import require_super_admin, require_role, get_current_user_dependency
 
 router = APIRouter(prefix="/schools", tags=["学校管理"])
+
+DEFAULT_PASSWORD = "Admin@123"
+
+
+class BatchResetPasswordRequest(BaseModel):
+    school_ids: List[str]
 
 
 async def _get_school_admin_info(school_id: str, user_repo: UserRepository, db: AsyncSession) -> dict:
@@ -206,3 +215,49 @@ async def reject_school_endpoint(
     if school is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="学校不存在")
     return APIResponse.success(message="学校已拒绝")
+
+
+@router.post("/{school_id}/reset-password", response_model=APIResponse)
+async def reset_school_admin_password(
+    school_id: str,
+    current_user: User = Depends(require_super_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    from sqlalchemy import select
+    result = await db.execute(
+        select(User).where(User.school_id == school_id, User.role == UserRole.SCHOOL_ADMIN)
+    )
+    admin = result.scalar_one_or_none()
+    if admin is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="该学校无管理员账户")
+    admin.password_hash = get_password_hash(DEFAULT_PASSWORD)
+    admin.current_token = ""
+    await db.flush()
+    return APIResponse.success(message=f"密码已重置为默认密码 {DEFAULT_PASSWORD}")
+
+
+@router.post("/batch-reset-password", response_model=APIResponse)
+async def batch_reset_school_admin_password(
+    request: BatchResetPasswordRequest,
+    current_user: User = Depends(require_super_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    from sqlalchemy import select
+    success_count = 0
+    fail_count = 0
+    for school_id in request.school_ids:
+        result = await db.execute(
+            select(User).where(User.school_id == school_id, User.role == UserRole.SCHOOL_ADMIN)
+        )
+        admin = result.scalar_one_or_none()
+        if admin:
+            admin.password_hash = get_password_hash(DEFAULT_PASSWORD)
+            admin.current_token = ""
+            success_count += 1
+        else:
+            fail_count += 1
+    await db.flush()
+    msg = f"成功重置 {success_count} 个学校管理员密码为 {DEFAULT_PASSWORD}"
+    if fail_count > 0:
+        msg += f"，{fail_count} 个学校无管理员账户"
+    return APIResponse.success(message=msg)

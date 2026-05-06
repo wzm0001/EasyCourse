@@ -1,9 +1,9 @@
-import { Card, Button, Space, Tag, message, Popconfirm } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined } from '@ant-design/icons';
+import { Card, Button, Space, Tag, App, Popconfirm } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined, KeyOutlined, ReloadOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { useState, useRef } from 'react';
-import { getSchools, deleteSchool, approveSchool } from '@/api/schools';
+import { getSchools, deleteSchool, approveSchool, resetSchoolPassword, batchResetSchoolPassword } from '@/api/schools';
 import SchoolForm from './SchoolForm';
 
 const statusColorMap: Record<string, string> = {
@@ -23,7 +23,9 @@ const statusTextMap: Record<string, string> = {
 export default function SchoolManage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const actionRef = useRef<ActionType>(null);
+  const { message, modal } = App.useApp();
 
   const columns: ProColumns<any>[] = [
     { title: '学校名称', dataIndex: 'name', width: 200, ellipsis: true },
@@ -77,7 +79,7 @@ export default function SchoolManage() {
     {
       title: '操作',
       valueType: 'option',
-      width: 200,
+      width: 260,
       render: (_, record) => (
         <Space>
           <Button
@@ -110,6 +112,23 @@ export default function SchoolManage() {
             </Popconfirm>
           )}
           <Popconfirm
+            title="确定重置该学校管理员密码吗？"
+            description="密码将重置为默认密码 Admin@123"
+            onConfirm={async () => {
+              try {
+                const res = await resetSchoolPassword(record.id);
+                message.success((res as any)?.message || '密码重置成功');
+              } catch (e: any) {
+                const detail = e?.response?.data?.detail || '密码重置失败';
+                message.error(detail);
+              }
+            }}
+          >
+            <Button type="link" size="small" icon={<KeyOutlined />}>
+              重置密码
+            </Button>
+          </Popconfirm>
+          <Popconfirm
             title="确定删除该学校吗？"
             onConfirm={async () => {
               try {
@@ -130,11 +149,53 @@ export default function SchoolManage() {
     },
   ];
 
+  const handleBatchResetPassword = () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('请先选择需要重置密码的学校');
+      return;
+    }
+    modal.confirm({
+      title: '批量重置密码',
+      content: `确定将选中的 ${selectedRowKeys.length} 个学校的管理员密码重置为默认密码 Admin@123 吗？`,
+      okText: '确定重置',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          const res = await batchResetSchoolPassword(selectedRowKeys as string[]);
+          message.success((res as any)?.message || '批量重置成功');
+          setSelectedRowKeys([]);
+          actionRef.current?.reload();
+        } catch (e: any) {
+          const detail = e?.response?.data?.detail || '批量重置失败';
+          message.error(detail);
+        }
+      },
+    });
+  };
+
   return (
     <Card title="学校管理">
       <ProTable<any>
         columns={columns}
         actionRef={actionRef}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: setSelectedRowKeys,
+        }}
+        tableAlertOptionRender={() => (
+          <Space size="middle">
+            <Button
+              type="primary"
+              danger
+              icon={<ReloadOutlined />}
+              disabled={selectedRowKeys.length === 0}
+              onClick={handleBatchResetPassword}
+            >
+              批量重置密码 {selectedRowKeys.length > 0 ? `(${selectedRowKeys.length})` : ''}
+            </Button>
+          </Space>
+        )}
         request={async (params) => {
           const result = await getSchools({
             page: params.current || 1,
