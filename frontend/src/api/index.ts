@@ -31,7 +31,7 @@ api.interceptors.response.use(
     switch (status) {
       case 401:
         if (error.config?.url?.includes('/auth/login')) {
-          message.error(error.response?.data?.detail || '用户名或密码错误');
+          return Promise.reject(error);
         } else {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
