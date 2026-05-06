@@ -147,7 +147,7 @@ class UserStatusUpdate(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
-    username: str
+    username: Optional[str] = None
     new_password: str
 
 
