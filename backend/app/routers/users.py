@@ -173,7 +173,7 @@ async def update_user(
 async def reset_password(
     user_id: str,
     request: ResetPasswordRequest,
-    current_user: User = Depends(require_super_admin),
+    current_user: User = Depends(get_current_user_dependency),
     db: AsyncSession = Depends(get_db),
 ):
     if not validate_password_strength(request.new_password):
@@ -185,7 +185,14 @@ async def reset_password(
     target_user = await user_repo.get_by_id(user_id)
     if target_user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
-    if target_user.created_by != current_user.id:
+    if current_user.role == UserRole.SUPER_ADMIN:
+        pass
+    elif current_user.role == UserRole.SCHOOL_ADMIN:
+        if target_user.school_id != current_user.school_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+        if target_user.role == UserRole.SUPER_ADMIN:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
     from app.services.auth import get_password_hash
     await user_repo.update(user_id, {"password_hash": get_password_hash(request.new_password)})
@@ -196,14 +203,21 @@ async def reset_password(
 async def update_user_status(
     user_id: str,
     request: UserStatusUpdate,
-    current_user: User = Depends(require_super_admin),
+    current_user: User = Depends(get_current_user_dependency),
     db: AsyncSession = Depends(get_db),
 ):
     user_repo = UserRepository(db)
     target_user = await user_repo.get_by_id(user_id)
     if target_user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
-    if target_user.created_by != current_user.id:
+    if current_user.role == UserRole.SUPER_ADMIN:
+        pass
+    elif current_user.role == UserRole.SCHOOL_ADMIN:
+        if target_user.school_id != current_user.school_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+        if target_user.role == UserRole.SUPER_ADMIN:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
     await user_repo.update(user_id, {"is_active": request.is_active})
     return APIResponse.success(message="用户状态更新成功")
