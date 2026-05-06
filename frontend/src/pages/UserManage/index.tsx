@@ -1,10 +1,12 @@
-import { Card, Button, Space, Tag, App, Popconfirm, Modal, Form, Input } from 'antd';
+import { Card, Button, Space, Tag, App, Popconfirm, Modal, Form, Input, Radio } from 'antd';
 import { PlusOutlined, EditOutlined, KeyOutlined, StopOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { useState, useRef } from 'react';
 import { getUsers, createAdmin, updateUser, resetPassword, toggleUserStatus } from '@/api/users';
 import { useResponsive } from '@/hooks/useResponsive';
+
+const DEFAULT_PASSWORD = 'Admin@123';
 
 export default function UserManage() {
   const { message } = App.useApp();
@@ -65,6 +67,7 @@ export default function UserManage() {
               setResetUserId(record.id);
               setResetUsername(record.username);
               resetForm.resetFields();
+              resetForm.setFieldsValue({ passwordType: 'default' });
               setResetOpen(true);
             }}
           >
@@ -206,29 +209,46 @@ export default function UserManage() {
         onOk={async () => {
           try {
             const values = await resetForm.validateFields();
-            await resetPassword(resetUserId, values.new_password);
+            const customPwd = values.passwordType === 'custom' ? values.customPassword : undefined;
+            await resetPassword(resetUserId, customPwd || DEFAULT_PASSWORD);
             message.success('密码已重置');
             setResetOpen(false);
-          } catch {
-            message.error('重置失败');
+          } catch (e: any) {
+            if (e?.response?.data?.detail) {
+              message.error(e.response.data.detail);
+            }
           }
         }}
+        okText="确定重置"
+        okButtonProps={{ danger: true }}
         destroyOnHidden
       >
-        <Form form={resetForm} layout="vertical" preserve={false}>
+        <Form form={resetForm} layout="vertical" preserve={false} style={{ marginTop: 16 }}>
+          <Form.Item name="passwordType" label="密码设置">
+            <Radio.Group>
+              <Radio value="default">使用默认密码（{DEFAULT_PASSWORD}）</Radio>
+              <Radio value="custom">自定义密码</Radio>
+            </Radio.Group>
+          </Form.Item>
           <Form.Item
-            name="new_password"
-            label="新密码"
-            rules={[
-              { required: true, message: '请输入新密码' },
-              { min: 8, message: '密码至少8位' },
-              {
-                pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
-                message: '密码需包含大小写字母和数字',
-              },
-            ]}
+            noStyle
+            shouldUpdate={(prev, cur) => prev.passwordType !== cur.passwordType}
           >
-            <Input.Password placeholder="请输入新密码" />
+            {({ getFieldValue }) =>
+              getFieldValue('passwordType') === 'custom' ? (
+                <Form.Item
+                  name="customPassword"
+                  label="新密码"
+                  rules={[
+                    { required: true, message: '请输入新密码' },
+                    { min: 8, message: '密码至少8位' },
+                    { pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/, message: '密码需包含大小写字母和数字' },
+                  ]}
+                >
+                  <Input.Password placeholder="请输入新密码" />
+                </Form.Item>
+              ) : null
+            }
           </Form.Item>
         </Form>
       </Modal>
