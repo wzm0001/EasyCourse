@@ -16,6 +16,7 @@ import Schedule from '@/pages/Schedule';
 import ScheduleView from '@/pages/ScheduleView';
 import Export from '@/pages/Export';
 import TeachingClass from '@/pages/TeachingClass';
+import ScheduleWizard from '@/pages/ScheduleWizard';
 import NotificationCenter from '@/pages/NotificationCenter';
 import LogManage from '@/pages/LogManage';
 import BackupManage from '@/pages/BackupManage';
@@ -55,6 +56,10 @@ const router = createBrowserRouter([
       {
         path: 'users',
         element: <RoleGuard allowedRoles={[UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN]}><UserManage /></RoleGuard>,
+      },
+      {
+        path: 'schedule-wizard',
+        element: <RoleGuard allowedRoles={[UserRole.SCHOOL_ADMIN]}><ScheduleWizard /></RoleGuard>,
       },
       {
         path: 'semesters',

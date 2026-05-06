@@ -7,7 +7,7 @@ import { getSemesters } from '@/api/semesters';
 import { getGrades, getClasses, getTeachers } from '@/api/basicData';
 import CustomExportModal from './CustomExportModal';
 
-export default function Export() {
+export default function Export({ embedded }: { embedded?: boolean } = {}) {
   const { message } = App.useApp();
   const { isMobile } = useResponsive();
   const [semesters, setSemesters] = useState<any[]>([]);
@@ -89,8 +89,8 @@ export default function Export() {
     }
   };
 
-  return (
-    <Card title="课表导出">
+  const content = (
+    <>
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Space wrap>
           <span>学期：</span>
@@ -140,6 +140,8 @@ export default function Export() {
       </Space>
 
       <CustomExportModal open={customOpen} onClose={() => setCustomOpen(false)} onExport={handleCustomExport} />
-    </Card>
+    </>
   );
+
+  return embedded ? content : <Card title="课表导出">{content}</Card>;
 }

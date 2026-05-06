@@ -7,7 +7,7 @@ import { getGradePeriods, setupGradePeriods, setupDayPeriods } from '@/api/perio
 import PeriodTimeline from './PeriodTimeline';
 import TemplateSelect from './TemplateSelect';
 
-export default function PeriodConfig() {
+export default function PeriodConfig({ embedded }: { embedded?: boolean } = {}) {
   const { message } = App.useApp();
   const { isMobile } = useResponsive();
   const [grades, setGrades] = useState<any[]>([]);
@@ -65,8 +65,8 @@ export default function PeriodConfig() {
     }
   };
 
-  return (
-    <Card title="时间段配置">
+  const content = (
+    <>
       <Space style={{ marginBottom: 24 }} size="middle">
         <span>选择年级：</span>
         <Select
@@ -117,6 +117,8 @@ export default function PeriodConfig() {
           setPeriods(res.data || []);
         }}
       />
-    </Card>
+    </>
   );
+
+  return embedded ? content : <Card title="时间段配置">{content}</Card>;
 }

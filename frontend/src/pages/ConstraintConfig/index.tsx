@@ -18,7 +18,7 @@ const typeLabels: Record<string, string> = {
   grade_exclusive: '年级互斥约束',
 };
 
-export default function ConstraintConfig() {
+export default function ConstraintConfig({ embedded }: { embedded?: boolean } = {}) {
   const actionRef = useRef<ActionType>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
@@ -71,8 +71,8 @@ export default function ConstraintConfig() {
     },
   ];
 
-  return (
-    <Card title="排课规则配置">
+  const content = (
+    <>
       <ProTable<any>
         columns={columns}
         actionRef={actionRef}
@@ -107,6 +107,8 @@ export default function ConstraintConfig() {
           } catch { message.error('操作失败'); }
         }}
       />
-    </Card>
+    </>
   );
+
+  return embedded ? content : <Card title="排课规则配置">{content}</Card>;
 }

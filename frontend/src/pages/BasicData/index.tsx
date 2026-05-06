@@ -10,20 +10,12 @@ import ArrangementTab from './ArrangementTab';
 import ImportExportModal from './ImportExportModal';
 import { useResponsive } from '@/hooks/useResponsive';
 
-export default function BasicData() {
+export default function BasicData({ embedded }: { embedded?: boolean } = {}) {
   const [importOpen, setImportOpen] = useState(false);
   const { isMobile } = useResponsive();
 
-  return (
-    <Card
-      title="基础数据管理"
-      style={isMobile ? { margin: -16 } : undefined}
-      extra={
-        <Button icon={<ImportOutlined />} onClick={() => setImportOpen(true)}>
-          导入导出
-        </Button>
-      }
-    >
+  const content = (
+    <>
       <Tabs
         defaultActiveKey="grade"
         items={[
@@ -40,6 +32,20 @@ export default function BasicData() {
         onClose={() => setImportOpen(false)}
         onSuccess={() => {}}
       />
+    </>
+  );
+
+  return embedded ? content : (
+    <Card
+      title="基础数据管理"
+      style={isMobile ? { margin: -16 } : undefined}
+      extra={
+        <Button icon={<ImportOutlined />} onClick={() => setImportOpen(true)}>
+          导入导出
+        </Button>
+      }
+    >
+      {content}
     </Card>
   );
 }

@@ -50,7 +50,7 @@ const defaultPeriods = [
   { key: 'evening_2', label: '晚自习2' },
 ];
 
-export default function Schedule() {
+export default function Schedule({ embedded }: { embedded?: boolean } = {}) {
   const { message } = App.useApp();
   const { isMobile } = useResponsive();
   const [semesters, setSemesters] = useState<any[]>([]);
@@ -224,69 +224,73 @@ export default function Schedule() {
     }
   };
 
+  const content = (
+    <>
+      <ScheduleStepper />
+
+      <Space style={{ marginBottom: 16 }} wrap>
+        <span>学期：</span>
+        <Select
+          style={{ width: 220 }}
+          value={selectedSemester}
+          onChange={setSelectedSemester}
+          options={semesters.map((s) => ({ label: s.name, value: s.id }))}
+          placeholder="请选择学期"
+        />
+        <span>年级：</span>
+        <Select
+          style={{ width: 150 }}
+          value={selectedGrade}
+          onChange={setSelectedGrade}
+          options={grades.map((g) => ({ label: g.name, value: g.id }))}
+          placeholder="请选择年级"
+        />
+        <span>班级：</span>
+        <Select
+          style={{ width: 180 }}
+          value={selectedClass}
+          onChange={setSelectedClass}
+          options={classes.map((c) => ({ label: c.name, value: c.id }))}
+          placeholder="请选择班级"
+        />
+      </Space>
+
+      <ScheduleToolbar
+        lockStatus={lockStatus}
+        onAutoSchedule={handleAutoSchedule}
+        onClearSchedule={handleClearSchedule}
+        onAcquireLock={handleAcquireLock}
+        onReleaseLock={handleReleaseLock}
+        loading={loading}
+      />
+
+      <ConflictAlert conflicts={conflicts} />
+
+      {swapSource && (
+        <Alert
+          type="info"
+          message={`已选择 ${swapSource.cell.course_name}，请点击目标位置进行交换`}
+          closable
+          onClose={() => setSwapSource(null)}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      <ScheduleGrid
+        periods={defaultPeriods}
+        days={defaultDays}
+        data={scheduleData}
+        onCellClick={handleCellClick}
+        viewMode="class"
+      />
+
+      <DragLayer />
+    </>
+  );
+
   return (
     <DndProvider backend={HTML5Backend}>
-      <Card title="排课操作">
-        <ScheduleStepper />
-
-        <Space style={{ marginBottom: 16 }} wrap>
-          <span>学期：</span>
-          <Select
-            style={{ width: 220 }}
-            value={selectedSemester}
-            onChange={setSelectedSemester}
-            options={semesters.map((s) => ({ label: s.name, value: s.id }))}
-            placeholder="请选择学期"
-          />
-          <span>年级：</span>
-          <Select
-            style={{ width: 150 }}
-            value={selectedGrade}
-            onChange={setSelectedGrade}
-            options={grades.map((g) => ({ label: g.name, value: g.id }))}
-            placeholder="请选择年级"
-          />
-          <span>班级：</span>
-          <Select
-            style={{ width: 180 }}
-            value={selectedClass}
-            onChange={setSelectedClass}
-            options={classes.map((c) => ({ label: c.name, value: c.id }))}
-            placeholder="请选择班级"
-          />
-        </Space>
-
-        <ScheduleToolbar
-          lockStatus={lockStatus}
-          onAutoSchedule={handleAutoSchedule}
-          onClearSchedule={handleClearSchedule}
-          onAcquireLock={handleAcquireLock}
-          onReleaseLock={handleReleaseLock}
-          loading={loading}
-        />
-
-        <ConflictAlert conflicts={conflicts} />
-
-        {swapSource && (
-          <Alert
-            type="info"
-            message={`已选择 ${swapSource.cell.course_name}，请点击目标位置进行交换`}
-            closable
-            onClose={() => setSwapSource(null)}
-            style={{ marginBottom: 16 }}
-          />
-        )}
-
-        <ScheduleGrid
-          periods={defaultPeriods}
-          days={defaultDays}
-          data={scheduleData}
-          onCellClick={handleCellClick}
-          viewMode="class"
-        />
-
-        <DragLayer />
-      </Card>
+      {embedded ? content : <Card title="排课操作">{content}</Card>}
     </DndProvider>
   );
 }

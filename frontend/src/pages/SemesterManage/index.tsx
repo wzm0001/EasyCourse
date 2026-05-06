@@ -16,7 +16,7 @@ import {
 
 const { RangePicker } = DatePicker;
 
-export default function SemesterManage() {
+export default function SemesterManage({ embedded }: { embedded?: boolean } = {}) {
   const { message } = App.useApp();
   const { isMobile } = useResponsive();
   const [formOpen, setFormOpen] = useState(false);
@@ -117,8 +117,8 @@ export default function SemesterManage() {
     },
   ];
 
-  return (
-    <Card title="学期管理">
+  const content = (
+    <>
       <ProTable<any>
         columns={columns}
         actionRef={actionRef}
@@ -226,6 +226,8 @@ export default function SemesterManage() {
           </Form.Item>
         </Form>
       </Modal>
-    </Card>
+    </>
   );
+
+  return embedded ? content : <Card title="学期管理">{content}</Card>;
 }

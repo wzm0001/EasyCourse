@@ -7,7 +7,7 @@ import { getTeachingClasses, createTeachingClass, updateTeachingClass, deleteTea
 import { getGrades, getCourses, getClasses } from '@/api/basicData';
 import { useResponsive } from '@/hooks/useResponsive';
 
-export default function TeachingClass() {
+export default function TeachingClass({ embedded }: { embedded?: boolean } = {}) {
   const { message } = App.useApp();
   const { isMobile } = useResponsive();
   const actionRef = useRef<ActionType>(null);
@@ -55,8 +55,8 @@ export default function TeachingClass() {
     },
   ];
 
-  return (
-    <Card title="教学班管理">
+  const content = (
+    <>
       <ProTable<any>
         columns={columns}
         actionRef={actionRef}
@@ -105,6 +105,8 @@ export default function TeachingClass() {
           </Form.Item>
         </Form>
       </Modal>
-    </Card>
+    </>
   );
+
+  return embedded ? content : <Card title="教学班管理">{content}</Card>;
 }
