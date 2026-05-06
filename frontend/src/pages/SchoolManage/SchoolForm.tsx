@@ -4,6 +4,7 @@ import { createSchool, updateSchool } from '@/api/schools';
 import api from '@/api';
 import { useState } from 'react';
 import { useResponsive } from '@/hooks/useResponsive';
+import { useAuthStore } from '@/store/auth';
 
 interface SchoolFormProps {
   open: boolean;
@@ -16,6 +17,7 @@ export default function SchoolForm({ open, editData, onClose, onSuccess }: Schoo
   const [form] = Form.useForm();
   const { message } = App.useApp();
   const { isMobile } = useResponsive();
+  const refreshUser = useAuthStore((s) => s.refreshUser);
   const isEdit = !!editData;
   const [attachmentUrl, setAttachmentUrl] = useState(editData?.attachment || '');
 
@@ -36,6 +38,7 @@ export default function SchoolForm({ open, editData, onClose, onSuccess }: Schoo
           if (isEdit) {
             await updateSchool(editData.id, data);
             message.success('更新成功');
+            await refreshUser();
           } else {
             const res = await createSchool(data);
             message.success((res as any)?.message || '创建成功');

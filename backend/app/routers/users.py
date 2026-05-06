@@ -166,6 +166,35 @@ async def update_user(
             detail="密码强度不足：至少8位，需包含大小写字母和数字",
         )
     await update_user_profile(user_id, request.model_dump(), db)
+    if target_user.role == UserRole.SCHOOL_ADMIN and target_user.school_id:
+        school_update = {}
+        if request.username and request.username != target_user.username:
+            school_update["name"] = request.username
+        if request.real_name and request.real_name != target_user.real_name:
+            school_update["contact_person"] = request.real_name
+        if request.phone and request.phone != target_user.phone:
+            school_update["contact_phone"] = request.phone
+        if school_update:
+            from app.repositories.user import SchoolRepository
+            school_repo = SchoolRepository(db)
+            await school_repo.update(target_user.school_id, school_update)
+    if target_user.role == UserRole.TEACHER:
+        teacher_update = {}
+        if request.real_name and request.real_name != target_user.real_name:
+            teacher_update["name"] = request.real_name
+        if request.phone and request.phone != target_user.phone:
+            teacher_update["phone"] = request.phone
+        if teacher_update:
+            from sqlalchemy import select as sa_select
+            from app.models.basic_data import Teacher
+            result = await db.execute(
+                sa_select(Teacher).where(Teacher.user_id == user_id)
+            )
+            teacher = result.scalar_one_or_none()
+            if teacher:
+                for k, v in teacher_update.items():
+                    setattr(teacher, k, v)
+                await db.flush()
     return APIResponse.success(message="用户信息更新成功")
 
 

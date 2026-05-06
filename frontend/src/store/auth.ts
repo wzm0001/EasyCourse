@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { UserInfo, LoginRequest, LoginResponse } from '@/types/auth';
 import api from '@/api';
+import { getMe } from '@/api/auth';
 
 interface AuthState {
   token: string | null;
@@ -10,9 +11,10 @@ interface AuthState {
   logout: () => void;
   setUser: (user: UserInfo) => void;
   loadFromStorage: () => void;
+  refreshUser: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   user: null,
   isAuthenticated: false,
@@ -75,6 +77,23 @@ export const useAuthStore = create<AuthState>((set) => ({
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('user');
       }
+    }
+  },
+
+  refreshUser: async () => {
+    const { token, isAuthenticated } = get();
+    if (!token || !isAuthenticated) return;
+    try {
+      const res = await getMe();
+      const userData = (res as any)?.data || res;
+      if (userData) {
+        const remember = localStorage.getItem('remember') === 'true';
+        const storage = remember ? localStorage : sessionStorage;
+        storage.setItem('user', JSON.stringify(userData));
+        set({ user: userData });
+      }
+    } catch {
+      // ignore refresh errors
     }
   },
 }));

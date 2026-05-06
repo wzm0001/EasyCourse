@@ -24,4 +24,7 @@ export interface UserInfo {
   school_id?: string;
   school_name?: string;
   real_name?: string;
+  phone?: string;
+  email?: string;
+  is_active?: boolean;
 }

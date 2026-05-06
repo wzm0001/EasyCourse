@@ -6,6 +6,7 @@ import { useState, useRef } from 'react';
 import { getUsers, createAdmin, createTeacher, updateUser, resetPassword, toggleUserStatus } from '@/api/users';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useAuthStore } from '@/store/auth';
+import { getMe } from '@/api/auth';
 
 const DEFAULT_PASSWORD = 'Admin@123';
 
@@ -13,6 +14,7 @@ export default function UserManage() {
   const { message } = App.useApp();
   const { isMobile } = useResponsive();
   const user = useAuthStore((s) => s.user);
+  const refreshUser = useAuthStore((s) => s.refreshUser);
   const isSuperAdmin = user?.role === 'super_admin';
   const schoolName = user?.school_name || '';
 
@@ -235,6 +237,9 @@ export default function UserManage() {
             if (editData) {
               await updateUser(editData.id, values);
               message.success('更新成功');
+              if (editData.id === user?.id) {
+                await refreshUser();
+              }
             } else if (isSuperAdmin) {
               await createAdmin(values);
               message.success('创建成功');

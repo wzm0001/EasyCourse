@@ -250,6 +250,21 @@ async def update_school(
                 if admin:
                     admin.username = update_data["name"]
                     await db.flush()
+            admin_update = {}
+            if "contact_person" in update_data and update_data["contact_person"] != school.contact_person:
+                admin_update["real_name"] = update_data["contact_person"]
+            if "contact_phone" in update_data and update_data["contact_phone"] != school.contact_phone:
+                admin_update["phone"] = update_data["contact_phone"]
+            if admin_update:
+                from sqlalchemy import select as sa_select
+                result = await db.execute(
+                    sa_select(User).where(User.school_id == school_id, User.role == UserRole.SCHOOL_ADMIN)
+                )
+                admin = result.scalar_one_or_none()
+                if admin:
+                    for k, v in admin_update.items():
+                        setattr(admin, k, v)
+                    await db.flush()
         return APIResponse.success(message="学校信息更新成功")
     elif current_user.role == UserRole.SCHOOL_ADMIN and current_user.school_id == school_id:
         change_data = {k: v for k, v in request.model_dump().items() if v is not None}
