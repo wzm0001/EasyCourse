@@ -95,6 +95,7 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
+    username: Optional[str] = None
     real_name: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None

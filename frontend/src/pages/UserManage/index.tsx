@@ -146,7 +146,11 @@ export default function UserManage() {
           try {
             const values = await form.validateFields();
             if (editData) {
-              await updateUser(editData.id, values);
+              const updateData: any = { ...values };
+              if (!updateData.password) {
+                delete updateData.password;
+              }
+              await updateUser(editData.id, updateData);
               message.success('更新成功');
             } else {
               await createAdmin(values);
@@ -163,24 +167,31 @@ export default function UserManage() {
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item name="username" label="用户名" rules={[{ required: true, message: '请输入用户名' }]}>
-            <Input disabled={!!editData} />
+            <Input />
           </Form.Item>
-          {!editData && (
-            <Form.Item
-              name="password"
-              label="密码"
-              rules={[
-                { required: true, message: '请输入密码' },
-                { min: 8, message: '密码至少8位' },
-                {
-                  pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
-                  message: '密码需包含大小写字母和数字',
+          <Form.Item
+            name="password"
+            label={editData ? '新密码（留空则不修改）' : '密码'}
+            rules={editData ? [
+              {
+                validator: (_: any, value: string) => {
+                  if (!value) return Promise.resolve();
+                  if (value.length < 8) return Promise.reject('密码至少8位');
+                  if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/.test(value)) return Promise.reject('密码需包含大小写字母和数字');
+                  return Promise.resolve();
                 },
-              ]}
-            >
-              <Input.Password />
-            </Form.Item>
-          )}
+              },
+            ] : [
+              { required: true, message: '请输入密码' },
+              { min: 8, message: '密码至少8位' },
+              {
+                pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
+                message: '密码需包含大小写字母和数字',
+              },
+            ]}
+          >
+            <Input.Password placeholder={editData ? '留空则不修改密码' : '请输入密码'} />
+          </Form.Item>
           <Form.Item name="real_name" label="姓名" rules={[{ required: true, message: '请输入姓名' }]}>
             <Input />
           </Form.Item>

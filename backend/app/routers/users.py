@@ -153,6 +153,13 @@ async def update_user(
         else:
             if current_user.id != user_id:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    if request.username and request.username != target_user.username:
+        existing = await user_repo.get_by_username(request.username)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="用户名已存在",
+            )
     if request.password and not validate_password_strength(request.password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -65,7 +65,7 @@ async def create_teacher(teacher_data: dict, school_id: str, db: AsyncSession) -
 async def update_user_profile(user_id: str, data: dict, db: AsyncSession) -> Optional[User]:
     user_repo = UserRepository(db)
     update_data = {}
-    for key in ["real_name", "phone", "email"]:
+    for key in ["username", "real_name", "phone", "email"]:
         if key in data and data[key] is not None:
             update_data[key] = data[key]
     if "password" in data and data["password"] is not None:
