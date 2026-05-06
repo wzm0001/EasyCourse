@@ -23,7 +23,7 @@ async def get_users(
 ):
     user_repo = UserRepository(db)
     if current_user.role == UserRole.SUPER_ADMIN:
-        users, total = await user_repo.get_admin_users(created_by=current_user.id, page=page, page_size=page_size)
+        users, total = await user_repo.get_admin_users(page=page, page_size=page_size)
     else:
         if not current_user.school_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
