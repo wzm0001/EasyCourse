@@ -10,7 +10,7 @@ export function createAdmin(data: any) {
 }
 
 export function createTeacher(data: any) {
-  return post<any>('/users/teacher', data);
+  return post<any>('/users/teachers', data);
 }
 
 export function updateUser(id: string, data: any) {
