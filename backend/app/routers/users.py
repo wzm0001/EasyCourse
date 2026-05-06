@@ -165,14 +165,17 @@ async def update_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="密码强度不足：至少8位，需包含大小写字母和数字",
         )
+    old_username = target_user.username
+    old_real_name = target_user.real_name
+    old_phone = target_user.phone
     await update_user_profile(user_id, request.model_dump(), db)
     if target_user.role == UserRole.SCHOOL_ADMIN and target_user.school_id:
         school_update = {}
-        if request.username and request.username != target_user.username:
+        if request.username and request.username != old_username:
             school_update["name"] = request.username
-        if request.real_name and request.real_name != target_user.real_name:
+        if request.real_name and request.real_name != old_real_name:
             school_update["contact_person"] = request.real_name
-        if request.phone and request.phone != target_user.phone:
+        if request.phone and request.phone != old_phone:
             school_update["contact_phone"] = request.phone
         if school_update:
             from app.repositories.user import SchoolRepository
@@ -180,9 +183,9 @@ async def update_user(
             await school_repo.update(target_user.school_id, school_update)
     if target_user.role == UserRole.TEACHER:
         teacher_update = {}
-        if request.real_name and request.real_name != target_user.real_name:
+        if request.real_name and request.real_name != old_real_name:
             teacher_update["name"] = request.real_name
-        if request.phone and request.phone != target_user.phone:
+        if request.phone and request.phone != old_phone:
             teacher_update["phone"] = request.phone
         if teacher_update:
             from sqlalchemy import select as sa_select

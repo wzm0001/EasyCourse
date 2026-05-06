@@ -239,21 +239,17 @@ async def update_school(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="该学校名称已被其他学校使用",
                 )
+        old_name = school.name
+        old_contact_person = school.contact_person
+        old_contact_phone = school.contact_phone
         if update_data:
             await school_repo.update(school_id, update_data)
-            if "name" in update_data and update_data["name"] != school.name:
-                from sqlalchemy import select as sa_select
-                result = await db.execute(
-                    sa_select(User).where(User.school_id == school_id, User.role == UserRole.SCHOOL_ADMIN)
-                )
-                admin = result.scalar_one_or_none()
-                if admin:
-                    admin.username = update_data["name"]
-                    await db.flush()
             admin_update = {}
-            if "contact_person" in update_data and update_data["contact_person"] != school.contact_person:
+            if "name" in update_data and update_data["name"] != old_name:
+                admin_update["username"] = update_data["name"]
+            if "contact_person" in update_data and update_data["contact_person"] != old_contact_person:
                 admin_update["real_name"] = update_data["contact_person"]
-            if "contact_phone" in update_data and update_data["contact_phone"] != school.contact_phone:
+            if "contact_phone" in update_data and update_data["contact_phone"] != old_contact_phone:
                 admin_update["phone"] = update_data["contact_phone"]
             if admin_update:
                 from sqlalchemy import select as sa_select
