@@ -25,8 +25,13 @@ export default function Login() {
       await login({ username: values.username, password: values.password }, remember);
       message.success('登录成功');
       navigate('/dashboard');
-    } catch {
-      message.error('登录失败，请检查用户名和密码');
+    } catch (e: any) {
+      const detail = e?.response?.data?.detail;
+      if (detail) {
+        message.error(detail);
+      } else {
+        message.error('登录失败，请检查用户名和密码');
+      }
     }
   };
 

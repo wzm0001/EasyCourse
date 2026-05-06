@@ -30,10 +30,14 @@ api.interceptors.response.use(
     const status = error.response?.status;
     switch (status) {
       case 401:
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-        message.error('登录已过期，请重新登录');
+        if (error.config?.url?.includes('/auth/login')) {
+          message.error(error.response?.data?.detail || '用户名或密码错误');
+        } else {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+          message.error('登录已过期，请重新登录');
+        }
         break;
       case 403:
         message.error('没有权限访问');
