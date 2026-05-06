@@ -74,9 +74,9 @@ export default function SchoolForm({ open, editData, onClose, onSuccess }: Schoo
             { len: 18, message: '统一社会信用代码为18位' },
             { pattern: /^[0-9A-Z]+$/, message: '仅允许大写字母和数字' },
           ]}
-          extra="统一社会信用代码用于学校资质认证，不可修改"
+          extra="统一社会信用代码用于学校资质认证"
         >
-          <Input disabled={isEdit} placeholder="请输入18位统一社会信用代码" style={{ textTransform: 'uppercase' }} />
+          <Input placeholder="请输入18位统一社会信用代码" style={{ textTransform: 'uppercase' }} />
         </Form.Item>
         <Form.Item name="school_type" label="学校类型" rules={[{ required: true, message: '请选择学校类型' }]}>
           <Select

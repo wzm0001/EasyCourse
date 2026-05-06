@@ -46,6 +46,7 @@ class SchoolCreate(BaseModel):
 
 class SchoolUpdate(BaseModel):
     name: Optional[str] = None
+    code: Optional[str] = None
     address: Optional[str] = None
     contact_person: Optional[str] = None
     contact_phone: Optional[str] = None

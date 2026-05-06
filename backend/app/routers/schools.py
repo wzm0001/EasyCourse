@@ -224,8 +224,32 @@ async def update_school(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="学校不存在")
     if current_user.role == UserRole.SUPER_ADMIN:
         update_data = {k: v for k, v in request.model_dump().items() if v is not None}
+        if "code" in update_data and update_data["code"] != school.code:
+            existing = await school_repo.get_by_code(update_data["code"])
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="该统一社会信用代码已被其他学校使用",
+                )
+        if "name" in update_data and update_data["name"] != school.name:
+            user_repo = UserRepository(db)
+            existing_user = await user_repo.get_by_username(update_data["name"])
+            if existing_user and existing_user.school_id != school_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="该学校名称已被其他学校使用",
+                )
         if update_data:
             await school_repo.update(school_id, update_data)
+            if "name" in update_data and update_data["name"] != school.name:
+                from sqlalchemy import select as sa_select
+                result = await db.execute(
+                    sa_select(User).where(User.school_id == school_id, User.role == UserRole.SCHOOL_ADMIN)
+                )
+                admin = result.scalar_one_or_none()
+                if admin:
+                    admin.username = update_data["name"]
+                    await db.flush()
         return APIResponse.success(message="学校信息更新成功")
     elif current_user.role == UserRole.SCHOOL_ADMIN and current_user.school_id == school_id:
         change_data = {k: v for k, v in request.model_dump().items() if v is not None}
