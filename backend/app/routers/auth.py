@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.user import User, UserRole, AccountStatus
+from app.models.user import User, UserRole, AccountStatus, School
 from app.schemas.common import APIResponse
 from app.schemas.user import LoginRequest, LoginResponse, UserInfo, SchoolCreate, ChangePasswordRequest, VerifyIdentityRequest, ResetPasswordRequest
-from app.services.auth import authenticate_user, create_access_token, validate_password_strength
+from app.services.auth import authenticate_user, create_access_token, validate_password_strength, verify_password
 from app.services.user import register_school, change_password
 from app.repositories.user import UserRepository, SchoolRepository
 from app.middleware.auth import get_current_user_dependency
@@ -16,6 +16,19 @@ router = APIRouter(prefix="/auth", tags=["认证"])
 @router.post("/login", response_model=APIResponse[LoginResponse])
 async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
     user = await authenticate_user(request.username, request.password, db)
+    if user is None:
+        from sqlalchemy import select as sa_select
+        school_result = await db.execute(
+            sa_select(School).where(School.name == request.username)
+        )
+        school = school_result.scalar_one_or_none()
+        if school:
+            admin_result = await db.execute(
+                sa_select(User).where(User.school_id == school.id, User.role == UserRole.SCHOOL_ADMIN)
+            )
+            admin = admin_result.scalar_one_or_none()
+            if admin and verify_password(request.password, admin.password_hash):
+                user = admin
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

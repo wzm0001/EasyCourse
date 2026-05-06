@@ -30,6 +30,24 @@ from app.middleware.maintenance import MaintenanceMiddleware
 async def lifespan(app: FastAPI):
     await init_db()
     from app.services.backup import setup_auto_backup
+    from app.database import AsyncSessionLocal
+    from sqlalchemy import select
+    from app.models.user import User, UserRole, School
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(User, School).join(School, User.school_id == School.id).where(User.role == UserRole.SCHOOL_ADMIN)
+        )
+        rows = result.all()
+        for user, school in rows:
+            if user.username != school.name:
+                existing = await db.execute(
+                    select(User).where(User.username == school.name, User.id != user.id)
+                )
+                if existing.scalar_one_or_none() is None:
+                    user.username = school.name
+        if rows:
+            await db.flush()
+        await db.commit()
     scheduler = setup_auto_backup(None)
     yield
     scheduler.shutdown()
