@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Form, Input, Button, Card, message, Checkbox, Modal, Steps, Row, Col } from 'antd';
+import { Form, Input, Button, Card, App, Checkbox, Modal, Steps, Row, Col } from 'antd';
 import { UserOutlined, LockOutlined, BankOutlined, PhoneOutlined, EnvironmentOutlined, KeyOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
@@ -9,7 +9,9 @@ import type { LoginRequest } from '@/types/auth';
 export default function Login() {
   const navigate = useNavigate();
   const login = useAuthStore((s) => s.login);
+  const { message, modal } = App.useApp();
   const [form] = Form.useForm<LoginRequest>();
+  const [loginLoading, setLoginLoading] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
@@ -20,18 +22,20 @@ export default function Login() {
   const [verifiedUsername, setVerifiedUsername] = useState('');
 
   const handleSubmit = async (values: LoginRequest & { remember?: boolean }) => {
+    setLoginLoading(true);
     try {
       const remember = values.remember ?? false;
       await login({ username: values.username, password: values.password }, remember);
       message.success('登录成功');
       navigate('/dashboard');
     } catch (e: any) {
-      const detail = e?.response?.data?.detail;
-      if (detail) {
-        message.error(detail);
-      } else {
-        message.error('登录失败，请检查用户名和密码');
-      }
+      const detail = e?.response?.data?.detail || e?.message;
+      modal.error({
+        title: '登录失败',
+        content: detail || '用户名或密码错误，请检查后重试',
+      });
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -184,6 +188,7 @@ export default function Login() {
               type="primary"
               htmlType="submit"
               block
+              loading={loginLoading}
               style={{ height: 44, borderRadius: 8 }}
             >
               登录
