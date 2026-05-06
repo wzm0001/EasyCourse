@@ -1,11 +1,14 @@
 import { useRef, useState, useEffect } from 'react';
-import { Button, message, Popconfirm, Modal, Form, Select, InputNumber } from 'antd';
+import { Button, Popconfirm, Modal, Form, Select, InputNumber, App } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getTeachingArrangements, createTeachingArrangement, deleteTeachingArrangement, getGrades, getClasses, getCourses, getTeachers } from '@/api/basicData';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function ArrangementTab() {
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
   const actionRef = useRef<ActionType>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [grades, setGrades] = useState<any[]>([]);
@@ -69,7 +72,8 @@ export default function ArrangementTab() {
             setFormOpen(false);
           } catch { message.error('操作失败'); }
         }}
-        destroyOnClose
+        destroyOnHidden
+        width={isMobile ? '90vw' : 520}
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item name="grade_id" label="年级" rules={[{ required: true, message: '请选择年级' }]}>

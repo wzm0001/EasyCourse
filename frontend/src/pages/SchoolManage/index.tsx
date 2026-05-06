@@ -5,6 +5,7 @@ import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { useState, useRef } from 'react';
 import { getSchools, deleteSchool, approveSchool, resetSchoolPassword, batchResetSchoolPassword } from '@/api/schools';
 import SchoolForm from './SchoolForm';
+import { useResponsive } from '@/hooks/useResponsive';
 
 const DEFAULT_PASSWORD = 'Admin@123';
 
@@ -28,6 +29,7 @@ export default function SchoolManage() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const actionRef = useRef<ActionType>(null);
   const { message } = App.useApp();
+  const { isMobile } = useResponsive();
 
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetTarget, setResetTarget] = useState<{ type: 'single' | 'batch'; id?: string; count?: number }>({ type: 'single' });
@@ -221,7 +223,7 @@ export default function SchoolManage() {
         }}
         rowKey="id"
         search={{ labelWidth: 'auto', defaultCollapsed: true }}
-        scroll={{ x: 1500 }}
+        scroll={{ x: isMobile ? 1000 : 1500 }}
         toolBarRender={() => [
           <Button
             key="add"
@@ -262,8 +264,8 @@ export default function SchoolManage() {
         onOk={handleResetConfirm}
         okText="确定重置"
         okButtonProps={{ danger: true }}
-        destroyOnClose
-        width={460}
+        destroyOnHidden
+        width={isMobile ? '90vw' : 460}
       >
         <Form form={resetForm} layout="vertical" preserve={false} style={{ marginTop: 16 }}>
           <Form.Item name="passwordType" label="密码设置">

@@ -1,4 +1,5 @@
 import { Modal, Form, Select, Checkbox } from 'antd';
+import { useResponsive } from '@/hooks/useResponsive';
 
 interface CustomExportModalProps {
   open: boolean;
@@ -8,6 +9,7 @@ interface CustomExportModalProps {
 
 export default function CustomExportModal({ open, onClose, onExport }: CustomExportModalProps) {
   const [form] = Form.useForm();
+  const { isMobile } = useResponsive();
 
   return (
     <Modal
@@ -21,7 +23,8 @@ export default function CustomExportModal({ open, onClose, onExport }: CustomExp
           onClose();
         } catch {}
       }}
-      destroyOnClose
+      destroyOnHidden
+      width={isMobile ? '90vw' : 520}
     >
       <Form form={form} layout="vertical" preserve={false}>
         <Form.Item name="export_type" label="导出类型" rules={[{ required: true, message: '请选择导出类型' }]}>

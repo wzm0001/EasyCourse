@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Card, Select, Button, Form, InputNumber, Space, message } from 'antd';
+import { Card, Select, Button, Form, InputNumber, Space, App } from 'antd';
 import { AppstoreOutlined, SaveOutlined } from '@ant-design/icons';
+import { useResponsive } from '@/hooks/useResponsive';
 import { getGrades } from '@/api/basicData';
 import { getGradePeriods, setupGradePeriods, setupDayPeriods } from '@/api/periods';
 import PeriodTimeline from './PeriodTimeline';
 import TemplateSelect from './TemplateSelect';
 
 export default function PeriodConfig() {
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
   const [grades, setGrades] = useState<any[]>([]);
   const [selectedGrade, setSelectedGrade] = useState<string>('');
   const [periods, setPeriods] = useState<any[]>([]);

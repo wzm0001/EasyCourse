@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Upload, Select, Button, Space, message, Radio } from 'antd';
+import { Modal, Upload, Select, Button, Space, App, Radio } from 'antd';
 import { UploadOutlined, DownloadOutlined } from '@ant-design/icons';
 import { downloadTemplate, importData, exportData } from '@/api/basicData';
 
@@ -19,6 +19,7 @@ const dataTypes = [
 ];
 
 export default function ImportExportModal({ open, onClose, onSuccess }: ImportExportModalProps) {
+  const { message } = App.useApp();
   const [dataType, setDataType] = useState<string>('grades');
   const [mode, setMode] = useState<'import' | 'export'>('import');
   const [fileList, setFileList] = useState<any[]>([]);

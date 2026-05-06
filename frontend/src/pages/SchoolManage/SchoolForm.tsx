@@ -3,6 +3,7 @@ import { UploadOutlined } from '@ant-design/icons';
 import { createSchool, updateSchool } from '@/api/schools';
 import api from '@/api';
 import { useState } from 'react';
+import { useResponsive } from '@/hooks/useResponsive';
 
 interface SchoolFormProps {
   open: boolean;
@@ -14,6 +15,7 @@ interface SchoolFormProps {
 export default function SchoolForm({ open, editData, onClose, onSuccess }: SchoolFormProps) {
   const [form] = Form.useForm();
   const { message } = App.useApp();
+  const { isMobile } = useResponsive();
   const isEdit = !!editData;
   const [attachmentUrl, setAttachmentUrl] = useState(editData?.attachment || '');
 
@@ -51,9 +53,9 @@ export default function SchoolForm({ open, editData, onClose, onSuccess }: Schoo
           }
         }
       }}
-      width={520}
+      width={isMobile ? '90vw' : 520}
       style={{ top: 20 }}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}

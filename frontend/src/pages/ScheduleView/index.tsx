@@ -3,10 +3,13 @@ import ClassScheduleView from './ClassScheduleView';
 import TeacherScheduleView from './TeacherScheduleView';
 import ClassroomScheduleView from './ClassroomScheduleView';
 import GradeScheduleView from './GradeScheduleView';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function ScheduleView() {
+  const { isMobile } = useResponsive();
+
   return (
-    <Card title="课表查看">
+    <Card title="课表查看" style={isMobile ? { margin: -16 } : undefined}>
       <Tabs
         defaultActiveKey="class"
         items={[

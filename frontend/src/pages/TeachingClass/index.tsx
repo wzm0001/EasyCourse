@@ -1,12 +1,15 @@
 import { useRef, useState, useEffect } from 'react';
-import { Card, Button, Space, message, Popconfirm, Modal, Form, Select, Input } from 'antd';
+import { Card, Button, Space, App, Popconfirm, Modal, Form, Select, Input } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getTeachingClasses, createTeachingClass, updateTeachingClass, deleteTeachingClass } from '@/api/teachingClasses';
 import { getGrades, getCourses, getClasses } from '@/api/basicData';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function TeachingClass() {
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
   const actionRef = useRef<ActionType>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
@@ -67,10 +70,12 @@ export default function TeachingClass() {
           <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => { setEditData(null); form.resetFields(); setFormOpen(true); }}>新增教学班</Button>,
         ]}
         pagination={{ defaultPageSize: 10 }}
+        scroll={{ x: isMobile ? 600 : 800 }}
       />
       <Modal
         title={editData ? '编辑教学班' : '新增教学班'}
         open={formOpen}
+        width={isMobile ? '90vw' : 520}
         onCancel={() => { setFormOpen(false); setEditData(null); }}
         onOk={async () => {
           try {
@@ -80,7 +85,7 @@ export default function TeachingClass() {
             actionRef.current?.reload(); setFormOpen(false); setEditData(null);
           } catch { message.error('操作失败'); }
         }}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item name="name" label="教学班名称" rules={[{ required: true, message: '请输入名称' }]}>

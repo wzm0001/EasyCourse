@@ -3,6 +3,7 @@ import { Form, Input, Button, Card, App, Checkbox, Modal, Steps, Row, Col, Uploa
 import { UserOutlined, LockOutlined, BankOutlined, PhoneOutlined, EnvironmentOutlined, KeyOutlined, UploadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
+import { useResponsive } from '@/hooks/useResponsive';
 import api from '@/api';
 import type { LoginRequest } from '@/types/auth';
 
@@ -10,6 +11,7 @@ export default function Login() {
   const navigate = useNavigate();
   const login = useAuthStore((s) => s.login);
   const { message, modal } = App.useApp();
+  const { isMobile } = useResponsive();
   const [form] = Form.useForm<LoginRequest>();
   const [loginLoading, setLoginLoading] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -119,7 +121,7 @@ export default function Login() {
       <Card
         style={{
           width: '90vw',
-          maxWidth: 420,
+          maxWidth: isMobile ? '95vw' : 420,
           borderRadius: 12,
           boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
         }}
@@ -216,8 +218,8 @@ export default function Login() {
         open={registerOpen}
         onCancel={() => setRegisterOpen(false)}
         footer={null}
-        width={520}
-        destroyOnClose
+        width={isMobile ? '95vw' : 520}
+        destroyOnHidden
       >
         <div style={{ marginBottom: 16, color: '#666', fontSize: 13 }}>
           请填写学校信息提交申请，管理员审批通过后即可使用学校名称和设置的密码登录系统
@@ -328,8 +330,8 @@ export default function Login() {
         open={resetOpen}
         onCancel={() => { setResetOpen(false); setResetStep(0); setVerifiedUsername(''); }}
         footer={null}
-        width={480}
-        destroyOnClose
+        width={isMobile ? '95vw' : 480}
+        destroyOnHidden
       >
         <Steps
           current={resetStep}

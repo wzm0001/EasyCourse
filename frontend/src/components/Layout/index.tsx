@@ -38,7 +38,7 @@ export default function MainLayout() {
           onClose={() => setMobileDrawerOpen(false)}
           width={260}
           styles={{ body: { padding: 0, background: theme === 'dark' ? '#141414' : '#fff' } }}
-          destroyOnClose
+          destroyOnHidden
         >
           <div
             style={{

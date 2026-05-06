@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Card, Select, Space, message, Modal, Alert } from 'antd';
+import { Card, Select, Space, App, Modal, Alert } from 'antd';
 import { LockOutlined, UnlockOutlined, DeleteOutlined, SwapOutlined } from '@ant-design/icons';
+import { useResponsive } from '@/hooks/useResponsive';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import ScheduleGrid from './ScheduleGrid';
@@ -50,6 +51,8 @@ const defaultPeriods = [
 ];
 
 export default function Schedule() {
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
   const [semesters, setSemesters] = useState<any[]>([]);
   const [grades, setGrades] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);

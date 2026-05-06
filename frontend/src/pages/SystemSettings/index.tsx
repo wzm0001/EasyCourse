@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, Switch, InputNumber, message, Space, Alert } from 'antd';
+import { Card, Form, Input, Button, Switch, InputNumber, App, Space, Alert } from 'antd';
 import { getSettings, updateSettings, testMysql, switchDatabase, getPasswordPolicy, updatePasswordPolicy, setMaintenanceMode } from '@/api/settings';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function SystemSettings() {
+  const { message } = App.useApp();
   const [settingsForm] = Form.useForm();
   const [policyForm] = Form.useForm();
   const [dbForm] = Form.useForm();
   const [maintenance, setMaintenance] = useState(false);
+  const { isMobile } = useResponsive();
 
   useEffect(() => {
     getSettings().then((res) => {
@@ -68,7 +71,7 @@ export default function SystemSettings() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: isMobile ? '100%' : 720 }}>
       <Card title="基本设置">
         <Form form={settingsForm} layout="vertical">
           <Form.Item name="token_expire_hours" label="Token 有效期（小时）">

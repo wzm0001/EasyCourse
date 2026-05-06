@@ -1,12 +1,15 @@
 import { useRef, useState } from 'react';
-import { Card, Button, Space, Tag, message } from 'antd';
+import { Card, Button, Space, Tag, App } from 'antd';
 import { CheckOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getNotifications, markAsRead, markAllAsRead, getUnreadCount } from '@/api/notifications';
 import { useAppStore } from '@/store/app';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function NotificationCenter() {
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
   const actionRef = useRef<ActionType>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const { unreadCount, setUnreadCount } = useAppStore();
@@ -129,7 +132,7 @@ export default function NotificationCenter() {
         }}
         rowKey="id"
         search={{ labelWidth: 'auto', defaultCollapsed: true }}
-        scroll={{ x: 800 }}
+        scroll={{ x: isMobile ? 600 : 800 }}
         pagination={{ defaultPageSize: 10 }}
         rowSelection={{
           selectedRowKeys,

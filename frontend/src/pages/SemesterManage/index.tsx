@@ -1,9 +1,10 @@
-import { Card, Button, Space, message, Popconfirm, Modal, Form, Input, DatePicker } from 'antd';
+import { Card, Button, Space, App, Popconfirm, Modal, Form, Input, DatePicker } from 'antd';
 import { PlusOutlined, EditOutlined, CopyOutlined, CheckCircleOutlined, InboxOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { useState, useRef } from 'react';
 import dayjs from 'dayjs';
+import { useResponsive } from '@/hooks/useResponsive';
 import {
   getSemesters,
   createSemester,
@@ -16,6 +17,8 @@ import {
 const { RangePicker } = DatePicker;
 
 export default function SemesterManage() {
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
   const [copyOpen, setCopyOpen] = useState(false);
@@ -149,10 +152,12 @@ export default function SemesterManage() {
           </Button>,
         ]}
         pagination={{ defaultPageSize: 10 }}
+        scroll={{ x: isMobile ? 600 : 800 }}
       />
       <Modal
         title={editData ? '编辑学期' : '新增学期'}
         open={formOpen}
+        width={isMobile ? '90vw' : 520}
         onCancel={() => {
           setFormOpen(false);
           setEditData(null);
@@ -179,7 +184,7 @@ export default function SemesterManage() {
             message.error('操作失败');
           }
         }}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item name="name" label="学期名称" rules={[{ required: true, message: '请输入学期名称' }]}>
@@ -193,6 +198,7 @@ export default function SemesterManage() {
       <Modal
         title="复制学期"
         open={copyOpen}
+        width={isMobile ? '90vw' : 520}
         onCancel={() => setCopyOpen(false)}
         onOk={async () => {
           try {
@@ -209,7 +215,7 @@ export default function SemesterManage() {
             message.error('复制失败');
           }
         }}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={copyForm} layout="vertical" preserve={false}>
           <Form.Item name="name" label="新学期名称" rules={[{ required: true, message: '请输入学期名称' }]}>

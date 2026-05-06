@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Card, Select, Space, Button, Radio, message } from 'antd';
+import { Card, Select, Space, Button, Radio, App } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
+import { useResponsive } from '@/hooks/useResponsive';
 import { exportClassExcel, exportClassPdf, exportTeacherExcel, exportTeacherPdf, batchExportTeachers, batchExportClasses, customExport } from '@/api/exports';
 import { getSemesters } from '@/api/semesters';
 import { getGrades, getClasses, getTeachers } from '@/api/basicData';
 import CustomExportModal from './CustomExportModal';
 
 export default function Export() {
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
   const [semesters, setSemesters] = useState<any[]>([]);
   const [grades, setGrades] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);

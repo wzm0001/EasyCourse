@@ -1,14 +1,17 @@
 import { useRef, useState } from 'react';
-import { Card, Button, Space, message, Popconfirm, Modal, Form, Input } from 'antd';
+import { Card, Button, Space, App, Popconfirm, Modal, Form, Input } from 'antd';
 import { PlusOutlined, DownloadOutlined, UndoOutlined, DeleteOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getBackups, createBackup, restoreBackup, deleteBackup, downloadBackup } from '@/api/backups';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function BackupManage() {
   const actionRef = useRef<ActionType>(null);
   const [remarkOpen, setRemarkOpen] = useState(false);
   const [form] = Form.useForm();
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
 
   const columns: ProColumns<any>[] = [
     { title: '备份名称', dataIndex: 'name', width: 200 },
@@ -83,7 +86,7 @@ export default function BackupManage() {
         }}
         rowKey="id"
         search={{ labelWidth: 'auto', defaultCollapsed: true }}
-        scroll={{ x: 800 }}
+        scroll={{ x: isMobile ? 600 : 800 }}
         toolBarRender={() => [
           <Button
             key="add"
@@ -112,7 +115,8 @@ export default function BackupManage() {
             message.error('备份创建失败');
           }
         }}
-        destroyOnClose
+        destroyOnHidden
+        width={isMobile ? '90vw' : 520}
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item name="remark" label="备注">

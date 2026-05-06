@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
-import { Card, Form, Input, Button, Select, InputNumber, Switch, message } from 'antd';
+import { Card, Form, Input, Button, Select, InputNumber, Switch, App } from 'antd';
 import { getSettings, updateSettings } from '@/api/settings';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function SchoolSettings() {
+  const { message } = App.useApp();
   const [form] = Form.useForm();
+  const { isMobile } = useResponsive();
 
   useEffect(() => {
     getSettings().then((res) => {
@@ -22,7 +25,7 @@ export default function SchoolSettings() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: isMobile ? '100%' : 720 }}>
       <Card title="基本信息">
         <Form form={form} layout="vertical">
           <Form.Item name="school_name" label="学校名称" rules={[{ required: true, message: '请输入学校名称' }]}>

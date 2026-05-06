@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react';
-import { Button, Space, message, Popconfirm } from 'antd';
+import { Button, Space, Popconfirm, Modal, Form, Input, InputNumber, App } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getGrades, createGrade, updateGrade, deleteGrade } from '@/api/basicData';
-import { Modal, Form, Input, InputNumber } from 'antd';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function GradeTab() {
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
   const actionRef = useRef<ActionType>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
@@ -62,7 +64,8 @@ export default function GradeTab() {
             actionRef.current?.reload(); setFormOpen(false); setEditData(null);
           } catch { message.error('操作失败'); }
         }}
-        destroyOnClose
+        destroyOnHidden
+        width={isMobile ? '90vw' : 520}
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item name="name" label="年级名称" rules={[{ required: true, message: '请输入年级名称' }]}><Input /></Form.Item>

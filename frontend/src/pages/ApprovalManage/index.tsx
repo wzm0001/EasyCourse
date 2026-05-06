@@ -1,15 +1,18 @@
-import { Card, Button, Space, message, Modal, Input, Descriptions, Tag } from 'antd';
+import { Card, Button, Space, Modal, Input, Descriptions, Tag, App } from 'antd';
 import { CheckOutlined, CloseOutlined, PaperClipOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { useState, useRef } from 'react';
 import { getPendingSchools, approveSchool, rejectSchool } from '@/api/schools';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function ApprovalManage() {
   const actionRef = useRef<ActionType>(null);
   const [rejectModal, setRejectModal] = useState<{ open: boolean; id: string }>({ open: false, id: '' });
   const [rejectReason, setRejectReason] = useState('');
   const [detailModal, setDetailModal] = useState<{ open: boolean; record: any }>({ open: false, record: {} });
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
 
   const schoolTypeMap: Record<string, string> = {
     primary: '小学',
@@ -109,7 +112,7 @@ export default function ApprovalManage() {
         }}
         rowKey="id"
         search={{ labelWidth: 'auto', defaultCollapsed: true }}
-        scroll={{ x: 1100 }}
+        scroll={{ x: isMobile ? 900 : 1100 }}
         pagination={{ defaultPageSize: 10 }}
       />
       <Modal

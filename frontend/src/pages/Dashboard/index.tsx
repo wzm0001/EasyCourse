@@ -6,6 +6,7 @@ import {
   ShopOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '@/store/auth';
+import { useResponsive } from '@/hooks/useResponsive';
 import { UserRole } from '@/types/auth';
 import dayjs from 'dayjs';
 
@@ -19,6 +20,7 @@ const roleLabels: Record<string, { label: string; color: string }> = {
 
 export default function Dashboard() {
   const user = useAuthStore((s) => s.user);
+  const { isMobile } = useResponsive();
   const roleInfo = user ? roleLabels[user.role] || { label: '未知', color: 'default' } : { label: '未知', color: 'default' };
 
   return (
@@ -44,6 +46,7 @@ export default function Dashboard() {
                 title="教师总数"
                 value={0}
                 prefix={<UserOutlined />}
+                valueStyle={isMobile ? { fontSize: 20 } : undefined}
               />
             </Card>
           </Col>
@@ -53,6 +56,7 @@ export default function Dashboard() {
                 title="班级总数"
                 value={0}
                 prefix={<TeamOutlined />}
+                valueStyle={isMobile ? { fontSize: 20 } : undefined}
               />
             </Card>
           </Col>
@@ -62,6 +66,7 @@ export default function Dashboard() {
                 title="排课数量"
                 value={0}
                 prefix={<ScheduleOutlined />}
+                valueStyle={isMobile ? { fontSize: 20 } : undefined}
               />
             </Card>
           </Col>
@@ -71,6 +76,7 @@ export default function Dashboard() {
                 title="学校数量"
                 value={0}
                 prefix={<ShopOutlined />}
+                valueStyle={isMobile ? { fontSize: 20 } : undefined}
               />
             </Card>
           </Col>

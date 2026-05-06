@@ -1,11 +1,14 @@
-import { Card, Button, Space, Tag, message, Popconfirm, Modal, Form, Input } from 'antd';
+import { Card, Button, Space, Tag, App, Popconfirm, Modal, Form, Input } from 'antd';
 import { PlusOutlined, EditOutlined, KeyOutlined, StopOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { useState, useRef } from 'react';
 import { getUsers, createAdmin, updateUser, resetPassword, toggleUserStatus } from '@/api/users';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function UserManage() {
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
   const [resetOpen, setResetOpen] = useState(false);
@@ -113,7 +116,7 @@ export default function UserManage() {
         }}
         rowKey="id"
         search={{ labelWidth: 'auto', defaultCollapsed: true }}
-        scroll={{ x: 800 }}
+        scroll={{ x: isMobile ? 600 : 900 }}
         toolBarRender={() => [
           <Button
             key="add"
@@ -133,7 +136,7 @@ export default function UserManage() {
       <Modal
         title={editData ? '编辑管理员' : '新增管理员'}
         open={formOpen}
-        width={480}
+        width={isMobile ? '90vw' : 460}
         style={{ top: 20 }}
         onCancel={() => {
           setFormOpen(false);
@@ -156,7 +159,7 @@ export default function UserManage() {
             message.error('操作失败');
           }
         }}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item name="username" label="用户名" rules={[{ required: true, message: '请输入用户名' }]}>
@@ -192,7 +195,7 @@ export default function UserManage() {
       <Modal
         title={`重置密码 - ${resetUsername}`}
         open={resetOpen}
-        width={480}
+        width={isMobile ? '90vw' : 460}
         style={{ top: 20 }}
         onCancel={() => setResetOpen(false)}
         onOk={async () => {
@@ -205,7 +208,7 @@ export default function UserManage() {
             message.error('重置失败');
           }
         }}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={resetForm} layout="vertical" preserve={false}>
           <Form.Item

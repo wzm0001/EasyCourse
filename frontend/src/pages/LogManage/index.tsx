@@ -1,11 +1,14 @@
 import { useRef } from 'react';
-import { Card, Button, message } from 'antd';
+import { Card, Button, App } from 'antd';
 import { ExportOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getLogs, exportLogs } from '@/api/logs';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function LogManage() {
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
   const actionRef = useRef<ActionType>(null);
 
   const columns: ProColumns<any>[] = [
@@ -63,7 +66,7 @@ export default function LogManage() {
         }}
         rowKey="id"
         search={{ labelWidth: 'auto', defaultCollapsed: true }}
-        scroll={{ x: 900 }}
+        scroll={{ x: isMobile ? 600 : 800 }}
         pagination={{ defaultPageSize: 10 }}
       />
     </Card>

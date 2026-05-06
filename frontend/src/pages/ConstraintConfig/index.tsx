@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
-import { Card, Button, Space, message, Popconfirm, Switch } from 'antd';
+import { Card, Button, Space, App, Popconfirm, Switch } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getConstraints, createConstraint, updateConstraint, deleteConstraint, toggleConstraint } from '@/api/constraints';
 import ConstraintForm from './ConstraintForm';
+import { useResponsive } from '@/hooks/useResponsive';
 
 const typeLabels: Record<string, string> = {
   teacher_unavailable: '教师不可排课时段',
@@ -21,6 +22,8 @@ export default function ConstraintConfig() {
   const actionRef = useRef<ActionType>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
 
   const columns: ProColumns<any>[] = [
     { title: '约束名称', dataIndex: 'name', width: 200, ellipsis: true },
@@ -78,7 +81,8 @@ export default function ConstraintConfig() {
           return { data: result.items, total: result.total, success: true };
         }}
         rowKey="id"
-        search={{ labelWidth: 'auto' }}
+        search={{ labelWidth: 'auto', defaultCollapsed: true }}
+        scroll={{ x: isMobile ? 600 : 800 }}
         toolBarRender={() => [
           <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => { setEditData(null); setFormOpen(true); }}>新增约束</Button>,
         ]}

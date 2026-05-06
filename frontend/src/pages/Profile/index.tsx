@@ -1,15 +1,18 @@
 import { useState } from 'react';
-import { Card, Form, Input, Button, message, Descriptions, Divider, Modal } from 'antd';
+import { Card, Form, Input, Button, App, Descriptions, Divider, Modal } from 'antd';
 import { useAuthStore } from '@/store/auth';
 import { changePassword } from '@/api/auth';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function Profile() {
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
   const user = useAuthStore((s) => s.user);
   const [pwdOpen, setPwdOpen] = useState(false);
   const [form] = Form.useForm();
 
   return (
-    <div>
+    <div style={{ maxWidth: isMobile ? '100%' : 600 }}>
       <Card title="个人信息">
         <Descriptions column={{ xs: 1, sm: 2 }} bordered>
           <Descriptions.Item label="用户名">{user?.username}</Descriptions.Item>
@@ -28,6 +31,7 @@ export default function Profile() {
       <Modal
         title="修改密码"
         open={pwdOpen}
+        width={isMobile ? '90vw' : 600}
         style={{ top: 20 }}
         onCancel={() => setPwdOpen(false)}
         onOk={async () => {
@@ -48,7 +52,7 @@ export default function Profile() {
             message.error('密码修改失败');
           }
         }}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item name="old_password" label="旧密码" rules={[{ required: true, message: '请输入旧密码' }]}>

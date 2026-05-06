@@ -1,11 +1,14 @@
 import { useRef, useState, useEffect } from 'react';
-import { Button, Space, message, Popconfirm, Modal, Form, Input, InputNumber, Select, Transfer, Tag } from 'antd';
+import { Button, Space, Popconfirm, Modal, Form, Input, InputNumber, Select, Transfer, Tag, App } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getClassrooms, createClassroom, updateClassroom, deleteClassroom, getClassroomCourses, setClassroomCourses, getCourses } from '@/api/basicData';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function ClassroomTab() {
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
   const actionRef = useRef<ActionType>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
@@ -103,7 +106,8 @@ export default function ClassroomTab() {
             actionRef.current?.reload(); setFormOpen(false); setEditData(null);
           } catch { message.error('操作失败'); }
         }}
-        destroyOnClose
+        destroyOnHidden
+        width={isMobile ? '90vw' : 520}
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item name="name" label="教室名称" rules={[{ required: true, message: '请输入教室名称' }]}><Input /></Form.Item>
@@ -126,7 +130,7 @@ export default function ClassroomTab() {
             actionRef.current?.reload();
           } catch { message.error('分配失败'); }
         }}
-        width={600}
+        width={isMobile ? '90vw' : 600}
       >
         <Transfer
           dataSource={allCourses.map((c) => ({ key: c.id, title: c.name }))}

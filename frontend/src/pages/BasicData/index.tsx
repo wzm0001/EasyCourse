@@ -7,14 +7,17 @@ import CourseTab from './CourseTab';
 import TeacherTab from './TeacherTab';
 import ClassroomTab from './ClassroomTab';
 import ArrangementTab from './ArrangementTab';
-import ImportExportModal from './ImportExportModal';
+import { ImportExportModal } from './ImportExportModal';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function BasicData() {
   const [importOpen, setImportOpen] = useState(false);
+  const { isMobile } = useResponsive();
 
   return (
     <Card
       title="基础数据管理"
+      style={isMobile ? { margin: -16 } : undefined}
       extra={
         <Button icon={<ImportOutlined />} onClick={() => setImportOpen(true)}>
           导入导出

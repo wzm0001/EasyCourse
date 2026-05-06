@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Modal, List, Tag, message } from 'antd';
+import { Modal, List, Tag, App } from 'antd';
 import { getTemplates, applyTemplate } from '@/api/periods';
 
 interface TemplateSelectProps {
@@ -10,6 +10,7 @@ interface TemplateSelectProps {
 }
 
 export default function TemplateSelect({ open, gradeId, onClose, onSuccess }: TemplateSelectProps) {
+  const { message } = App.useApp();
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 

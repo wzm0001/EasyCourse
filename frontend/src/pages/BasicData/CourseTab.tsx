@@ -1,11 +1,14 @@
 import { useRef, useState } from 'react';
-import { Button, Space, message, Popconfirm, Modal, Form, Input, InputNumber, Select } from 'antd';
+import { Button, Space, Popconfirm, Modal, Form, Input, InputNumber, Select, App } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getCourses, createCourse, updateCourse, deleteCourse } from '@/api/basicData';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function CourseTab() {
+  const { message } = App.useApp();
+  const { isMobile } = useResponsive();
   const actionRef = useRef<ActionType>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
@@ -69,7 +72,8 @@ export default function CourseTab() {
             actionRef.current?.reload(); setFormOpen(false); setEditData(null);
           } catch { message.error('操作失败'); }
         }}
-        destroyOnClose
+        destroyOnHidden
+        width={isMobile ? '90vw' : 520}
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item name="name" label="课程名称" rules={[{ required: true, message: '请输入课程名称' }]}><Input /></Form.Item>
