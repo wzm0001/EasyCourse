@@ -48,6 +48,7 @@ export default function Login() {
         address: values.address || '',
         contact_person: values.contact_person,
         contact_phone: values.contact_phone,
+        password: values.password,
       });
       const result = response.data as any;
       message.success(result?.message || result?.data?.message || '注册申请已提交，请等待管理员审批');
@@ -216,7 +217,7 @@ export default function Login() {
         destroyOnClose
       >
         <div style={{ marginBottom: 16, color: '#666', fontSize: 13 }}>
-          请填写学校信息提交申请，管理员审批通过后即可使用系统。初始密码为学校编码 + @123
+          请填写学校信息提交申请，管理员审批通过后即可使用学校编码和设置的密码登录系统
         </div>
         <Form
           layout="vertical"
@@ -240,6 +241,21 @@ export default function Login() {
             extra="学校编码将作为登录用户名，不可修改"
           >
             <Input prefix={<KeyOutlined />} placeholder="请输入学校编码（如：school001）" />
+          </Form.Item>
+          <Form.Item
+            name="password"
+            label="登录密码"
+            rules={[
+              { required: true, message: '请输入登录密码' },
+              { min: 8, message: '密码至少8位' },
+              {
+                pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
+                message: '密码需包含大小写字母和数字',
+              },
+            ]}
+            extra="审批通过后使用学校编码和此密码登录"
+          >
+            <Input.Password prefix={<LockOutlined />} placeholder="请输入登录密码" />
           </Form.Item>
           <Form.Item name="address" label="学校地址">
             <Input prefix={<EnvironmentOutlined />} placeholder="请输入学校地址" />

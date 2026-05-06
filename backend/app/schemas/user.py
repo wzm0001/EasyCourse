@@ -33,6 +33,7 @@ class LoginResponse(BaseModel):
 class SchoolCreate(BaseModel):
     name: str
     code: str
+    password: str
     address: str = ""
     contact_person: str = ""
     contact_phone: str = ""

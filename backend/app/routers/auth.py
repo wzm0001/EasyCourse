@@ -59,6 +59,11 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
 
 @router.post("/register", response_model=APIResponse)
 async def register(request: SchoolCreate, db: AsyncSession = Depends(get_db)):
+    if not validate_password_strength(request.password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="密码强度不足：至少8位，需包含大小写字母和数字",
+        )
     user_repo = UserRepository(db)
     existing = await user_repo.get_by_username(request.code)
     if existing:
@@ -77,7 +82,7 @@ async def register(request: SchoolCreate, db: AsyncSession = Depends(get_db)):
     school = await register_school(request.model_dump(), db)
     admin_user = User(
         username=request.code,
-        password_hash=get_password_hash(request.code + "@123"),
+        password_hash=get_password_hash(request.password),
         real_name=request.contact_person,
         role=UserRole.SCHOOL_ADMIN,
         school_id=school.id,
