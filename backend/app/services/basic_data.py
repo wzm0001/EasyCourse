@@ -64,6 +64,7 @@ class ClassService:
             grade_id=data["grade_id"],
             name=data["name"],
             teacher_id=data.get("teacher_id"),
+            classroom_id=data.get("classroom_id"),
             is_teaching_class=data.get("is_teaching_class", False),
         )
         return await self.repo.create(cls)

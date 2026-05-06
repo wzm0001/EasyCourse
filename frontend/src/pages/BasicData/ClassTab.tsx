@@ -3,7 +3,7 @@ import { Button, Space, Popconfirm, Modal, Form, Input, InputNumber, Select, App
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { getClasses, createClass, updateClass, deleteClass, getGrades } from '@/api/basicData';
+import { getClasses, createClass, updateClass, deleteClass, getGrades, getClassrooms } from '@/api/basicData';
 import { useResponsive } from '@/hooks/useResponsive';
 
 export default function ClassTab() {
@@ -13,16 +13,19 @@ export default function ClassTab() {
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
   const [grades, setGrades] = useState<any[]>([]);
+  const [classrooms, setClassrooms] = useState<any[]>([]);
   const [form] = Form.useForm();
 
   useEffect(() => {
     getGrades({ page: 1, page_size: 100 }).then((res) => setGrades(res.items || []));
+    getClassrooms({ page: 1, page_size: 200 }).then((res) => setClassrooms(res.items || []));
   }, []);
 
   const columns: ProColumns<any>[] = [
     { title: '班级名称', dataIndex: 'name', width: 180 },
     { title: '班级编码', dataIndex: 'code', width: 120 },
     { title: '所属年级', dataIndex: 'grade_name', width: 120 },
+    { title: '绑定教室', dataIndex: 'classroom_name', width: 120, search: false, render: (_, record) => record.classroom_name || '-' },
     { title: '班主任', dataIndex: 'head_teacher_name', width: 100, search: false },
     { title: '学生人数', dataIndex: 'student_count', width: 100, search: false },
     {
@@ -76,6 +79,13 @@ export default function ClassTab() {
           <Form.Item name="code" label="班级编码" rules={[{ required: true, message: '请输入班级编码' }]}><Input /></Form.Item>
           <Form.Item name="grade_id" label="所属年级" rules={[{ required: true, message: '请选择年级' }]}>
             <Select options={grades.map((g) => ({ label: g.name, value: g.id }))} placeholder="请选择年级" />
+          </Form.Item>
+          <Form.Item name="classroom_id" label="绑定教室">
+            <Select
+              options={classrooms.map((c) => ({ label: `${c.name}${c.capacity ? ` (容量:${c.capacity})` : ''}`, value: c.id }))}
+              placeholder="请选择教室"
+              allowClear
+            />
           </Form.Item>
           <Form.Item name="student_count" label="学生人数"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>
         </Form>

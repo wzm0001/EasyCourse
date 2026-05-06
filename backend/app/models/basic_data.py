@@ -29,10 +29,12 @@ class Class_(BaseModel):
     grade_id: Mapped[str] = mapped_column(String(36), ForeignKey("grades.id"))
     name: Mapped[str] = mapped_column(String(100))
     teacher_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    classroom_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("classrooms.id"), nullable=True)
     is_teaching_class: Mapped[bool] = mapped_column(Boolean, default=False)
 
     grade: Mapped["Grade"] = relationship("Grade", back_populates="classes")
     teacher: Mapped["User | None"] = relationship("User", foreign_keys=[teacher_id])
+    classroom: Mapped["Classroom | None"] = relationship("Classroom", foreign_keys=[classroom_id])
 
 
 class Course(BaseModel):

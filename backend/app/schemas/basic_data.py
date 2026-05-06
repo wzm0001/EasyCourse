@@ -29,12 +29,14 @@ class ClassCreate(BaseModel):
     grade_id: str
     name: str
     teacher_id: Optional[str] = None
+    classroom_id: Optional[str] = None
     is_teaching_class: bool = False
 
 
 class ClassUpdate(BaseModel):
     name: Optional[str] = None
     teacher_id: Optional[str] = None
+    classroom_id: Optional[str] = None
     is_teaching_class: Optional[bool] = None
 
 
@@ -46,6 +48,8 @@ class ClassInfo(BaseModel):
     name: str
     teacher_id: Optional[str] = None
     teacher_name: Optional[str] = None
+    classroom_id: Optional[str] = None
+    classroom_name: Optional[str] = None
     is_teaching_class: bool
     created_at: datetime
 

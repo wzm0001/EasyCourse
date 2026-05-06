@@ -146,10 +146,18 @@ async def get_classes(
             teacher_user = await user_repo.get_by_id(c.teacher_id)
             if teacher_user:
                 teacher_name = teacher_user.real_name
+        classroom_name = None
+        if c.classroom_id:
+            from app.repositories.basic_data import ClassroomRepository
+            classroom_repo = ClassroomRepository(db)
+            classroom = await classroom_repo.get_by_id(c.classroom_id)
+            if classroom:
+                classroom_name = classroom.name
         items.append(ClassInfo(
             id=c.id, school_id=c.school_id, semester_id=c.semester_id,
             grade_id=c.grade_id, name=c.name, teacher_id=c.teacher_id,
-            teacher_name=teacher_name, is_teaching_class=c.is_teaching_class,
+            teacher_name=teacher_name, classroom_id=c.classroom_id,
+            classroom_name=classroom_name, is_teaching_class=c.is_teaching_class,
             created_at=c.created_at,
         ))
     return APIResponse.success(data=PageResponse(items=items, total=total, page=page, page_size=page_size))
@@ -175,10 +183,18 @@ async def create_class(
         teacher_user = await user_repo.get_by_id(cls.teacher_id)
         if teacher_user:
             teacher_name = teacher_user.real_name
+    classroom_name = None
+    if cls.classroom_id:
+        from app.repositories.basic_data import ClassroomRepository
+        classroom_repo = ClassroomRepository(db)
+        classroom = await classroom_repo.get_by_id(cls.classroom_id)
+        if classroom:
+            classroom_name = classroom.name
     return APIResponse.success(data=ClassInfo(
         id=cls.id, school_id=cls.school_id, semester_id=cls.semester_id,
         grade_id=cls.grade_id, name=cls.name, teacher_id=cls.teacher_id,
-        teacher_name=teacher_name, is_teaching_class=cls.is_teaching_class,
+        teacher_name=teacher_name, classroom_id=cls.classroom_id,
+        classroom_name=classroom_name, is_teaching_class=cls.is_teaching_class,
         created_at=cls.created_at,
     ))
 
@@ -204,10 +220,18 @@ async def update_class(
         teacher_user = await user_repo.get_by_id(updated.teacher_id)
         if teacher_user:
             teacher_name = teacher_user.real_name
+    classroom_name = None
+    if updated.classroom_id:
+        from app.repositories.basic_data import ClassroomRepository
+        classroom_repo = ClassroomRepository(db)
+        classroom = await classroom_repo.get_by_id(updated.classroom_id)
+        if classroom:
+            classroom_name = classroom.name
     return APIResponse.success(data=ClassInfo(
         id=updated.id, school_id=updated.school_id, semester_id=updated.semester_id,
         grade_id=updated.grade_id, name=updated.name, teacher_id=updated.teacher_id,
-        teacher_name=teacher_name, is_teaching_class=updated.is_teaching_class,
+        teacher_name=teacher_name, classroom_id=updated.classroom_id,
+        classroom_name=classroom_name, is_teaching_class=updated.is_teaching_class,
         created_at=updated.created_at,
     ))
 

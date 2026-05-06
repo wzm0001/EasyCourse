@@ -20,10 +20,10 @@ export default function BasicData({ embedded }: { embedded?: boolean } = {}) {
         defaultActiveKey="grade"
         items={[
           { key: 'grade', label: '年级', children: <GradeTab /> },
+          { key: 'classroom', label: '教室', children: <ClassroomTab /> },
           { key: 'class', label: '班级', children: <ClassTab /> },
           { key: 'course', label: '课程', children: <CourseTab /> },
           { key: 'teacher', label: '教师', children: <TeacherTab /> },
-          { key: 'classroom', label: '教室', children: <ClassroomTab /> },
           { key: 'arrangement', label: '教学安排', children: <ArrangementTab /> },
         ]}
       />
