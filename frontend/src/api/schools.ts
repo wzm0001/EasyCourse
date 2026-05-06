@@ -33,10 +33,14 @@ export function deleteSchool(id: string) {
   return del<any>(`/schools/${id}`);
 }
 
-export function resetSchoolPassword(id: string) {
-  return post<any>(`/schools/${id}/reset-password`);
+export function resetSchoolPassword(id: string, newPassword?: string) {
+  const params: Record<string, string> = {};
+  if (newPassword) params.new_password = newPassword;
+  return post<any>(`/schools/${id}/reset-password`, params);
 }
 
-export function batchResetSchoolPassword(schoolIds: string[]) {
-  return post<any>('/schools/batch-reset-password', { school_ids: schoolIds });
+export function batchResetSchoolPassword(schoolIds: string[], newPassword?: string) {
+  const data: Record<string, any> = { school_ids: schoolIds };
+  if (newPassword) data.new_password = newPassword;
+  return post<any>('/schools/batch-reset-password', data);
 }

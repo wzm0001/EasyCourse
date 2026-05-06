@@ -17,8 +17,13 @@ router = APIRouter(prefix="/schools", tags=["学校管理"])
 DEFAULT_PASSWORD = "Admin@123"
 
 
+class ResetPasswordBody(BaseModel):
+    new_password: str = DEFAULT_PASSWORD
+
+
 class BatchResetPasswordRequest(BaseModel):
     school_ids: List[str]
+    new_password: str = DEFAULT_PASSWORD
 
 
 async def _get_school_admin_info(school_id: str, user_repo: UserRepository, db: AsyncSession) -> dict:
@@ -220,6 +225,7 @@ async def reject_school_endpoint(
 @router.post("/{school_id}/reset-password", response_model=APIResponse)
 async def reset_school_admin_password(
     school_id: str,
+    request: ResetPasswordBody = ResetPasswordBody(),
     current_user: User = Depends(require_super_admin),
     db: AsyncSession = Depends(get_db),
 ):
@@ -230,10 +236,11 @@ async def reset_school_admin_password(
     admin = result.scalar_one_or_none()
     if admin is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="该学校无管理员账户")
-    admin.password_hash = get_password_hash(DEFAULT_PASSWORD)
+    pwd = request.new_password or DEFAULT_PASSWORD
+    admin.password_hash = get_password_hash(pwd)
     admin.current_token = ""
     await db.flush()
-    return APIResponse.success(message=f"密码已重置为默认密码 {DEFAULT_PASSWORD}")
+    return APIResponse.success(message=f"密码已重置为 {pwd}")
 
 
 @router.post("/batch-reset-password", response_model=APIResponse)
@@ -245,19 +252,20 @@ async def batch_reset_school_admin_password(
     from sqlalchemy import select
     success_count = 0
     fail_count = 0
+    pwd = request.new_password or DEFAULT_PASSWORD
     for school_id in request.school_ids:
         result = await db.execute(
             select(User).where(User.school_id == school_id, User.role == UserRole.SCHOOL_ADMIN)
         )
         admin = result.scalar_one_or_none()
         if admin:
-            admin.password_hash = get_password_hash(DEFAULT_PASSWORD)
+            admin.password_hash = get_password_hash(pwd)
             admin.current_token = ""
             success_count += 1
         else:
             fail_count += 1
     await db.flush()
-    msg = f"成功重置 {success_count} 个学校管理员密码为 {DEFAULT_PASSWORD}"
+    msg = f"成功重置 {success_count} 个学校管理员密码为 {pwd}"
     if fail_count > 0:
         msg += f"，{fail_count} 个学校无管理员账户"
     return APIResponse.success(message=msg)
