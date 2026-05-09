@@ -16,7 +16,7 @@ class ScheduleCell(BaseModel):
     course_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("courses.id"), nullable=True)
     teacher_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("teachers.id"), nullable=True)
     classroom_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("classrooms.id"), nullable=True)
-    is_fixed: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_locked: Mapped[bool] = mapped_column(Boolean, default=False)
 
     course: Mapped["Course | None"] = relationship("Course", foreign_keys=[course_id])
     teacher: Mapped["Teacher | None"] = relationship("Teacher", foreign_keys=[teacher_id])

@@ -1,6 +1,8 @@
 from datetime import datetime, date
-from typing import Optional
-from pydantic import BaseModel
+from typing import Optional, Literal
+from pydantic import BaseModel, computed_field
+
+SemesterStatus = Literal["not_started", "in_progress", "finished", "archived"]
 
 
 class SemesterCreate(BaseModel):
@@ -30,11 +32,27 @@ class SemesterInfo(BaseModel):
     is_archived: bool
     description: str
     created_at: datetime
+    status: SemesterStatus
 
     model_config = {"from_attributes": True}
 
     @classmethod
     def from_orm(cls, obj):
+        start = obj.start_date if isinstance(obj.start_date, date) else date.fromisoformat(obj.start_date)
+        end = obj.end_date if isinstance(obj.end_date, date) else date.fromisoformat(obj.end_date)
+        today = date.today()
+
+        if obj.is_archived:
+            status: SemesterStatus = "archived"
+        elif obj.is_active:
+            status = "in_progress"
+        elif today < start:
+            status = "not_started"
+        elif today > end:
+            status = "finished"
+        else:
+            status = "not_started"
+
         return cls(
             id=obj.id,
             school_id=obj.school_id,
@@ -46,6 +64,7 @@ class SemesterInfo(BaseModel):
             is_archived=obj.is_archived,
             description=obj.description,
             created_at=obj.created_at,
+            status=status,
         )
 
 

@@ -18,6 +18,7 @@ _rate_limits: Dict[str, Dict[str, Tuple[int, float]]] = {}
 RATE_LIMIT_CLEANUP_INTERVAL = 60
 _last_cleanup = time.time()
 
+CONFLICT_CHECK_RATE_LIMIT = 300
 DEFAULT_RATE_LIMIT = 60
 LOGIN_RATE_LIMIT = 5
 RATE_WINDOW = 60
@@ -126,6 +127,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         if "/auth/login" in path:
             limit = LOGIN_RATE_LIMIT
+        elif "/schedules/conflict-check" in path:
+            limit = CONFLICT_CHECK_RATE_LIMIT
         else:
             limit = DEFAULT_RATE_LIMIT
 

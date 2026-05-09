@@ -11,8 +11,10 @@ from app.services.semester import (
     update_semester,
     set_active_semester,
     archive_semester,
+    unarchive_semester,
     copy_semester_data,
     get_semesters,
+    delete_semester,
 )
 from app.middleware.auth import get_current_user_dependency
 from app.middleware.tenant import get_tenant_filter
@@ -27,7 +29,7 @@ async def get_active_semester(
 ):
     tenant = get_tenant_filter(current_user)
     if tenant.school_id is None:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+        return APIResponse.success(data=None)
     repo = SemesterRepository(db)
     active = await repo.get_active(tenant.school_id)
     if not active:
@@ -44,7 +46,7 @@ async def list_semesters(
 ):
     tenant = get_tenant_filter(current_user)
     if tenant.school_id is None:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+        return APIResponse.success(data=PageResponse(items=[], total=0, page=page, page_size=page_size))
     semesters, total = await get_semesters(tenant.school_id, page, page_size, db)
     items = [SemesterInfo.from_orm(s) for s in semesters]
     return APIResponse.success(data=PageResponse(items=items, total=total, page=page, page_size=page_size))
@@ -97,6 +99,8 @@ async def update_semester_endpoint(
     tenant = get_tenant_filter(current_user)
     if tenant.school_id is not None and semester.school_id != tenant.school_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    if semester.is_archived:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="该学期已归档，无法修改")
     update_data = {k: v for k, v in request.model_dump().items() if v is not None}
     updated = await update_semester(semester_id, update_data, db)
     return APIResponse.success(data=SemesterInfo.from_orm(updated))
@@ -115,7 +119,7 @@ async def activate_semester(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
     semester = await set_active_semester(semester_id, tenant.school_id, db)
     if semester is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="学期不存在或无法激活")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="学期不存在或无法激活（已归档的学期需先取消归档）")
     return APIResponse.success(data=SemesterInfo.from_orm(semester))
 
 
@@ -128,6 +132,23 @@ async def archive_semester_endpoint(
     if current_user.role not in (UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
     semester = await archive_semester(semester_id, db)
+    if semester is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="学期不存在")
+    tenant = get_tenant_filter(current_user)
+    if tenant.school_id is not None and semester.school_id != tenant.school_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    return APIResponse.success(data=SemesterInfo.from_orm(semester))
+
+
+@router.post("/{semester_id}/unarchive", response_model=APIResponse[SemesterInfo])
+async def unarchive_semester_endpoint(
+    semester_id: str,
+    current_user: User = Depends(get_current_user_dependency),
+    db: AsyncSession = Depends(get_db),
+):
+    if current_user.role not in (UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    semester = await unarchive_semester(semester_id, db)
     if semester is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="学期不存在")
     tenant = get_tenant_filter(current_user)
@@ -158,3 +179,24 @@ async def copy_semester_endpoint(
     if target is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="目标学期不存在或不在同一学校")
     return APIResponse.success(data=SemesterInfo.from_orm(target))
+
+
+@router.delete("/{semester_id}", response_model=APIResponse[bool])
+async def delete_semester_endpoint(
+    semester_id: str,
+    current_user: User = Depends(get_current_user_dependency),
+    db: AsyncSession = Depends(get_db),
+):
+    if current_user.role not in (UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    repo = SemesterRepository(db)
+    semester = await repo.get_by_id(semester_id)
+    if semester is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="学期不存在")
+    tenant = get_tenant_filter(current_user)
+    if tenant.school_id is not None and semester.school_id != tenant.school_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    result = await delete_semester(semester_id, db)
+    if not result:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="学期不存在")
+    return APIResponse.success(data=True)

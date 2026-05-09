@@ -66,6 +66,7 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
         phone=user.phone,
         email=user.email,
         is_active=user.is_active,
+        must_change_password=user.must_change_password,
     )
     return APIResponse.success(data=LoginResponse(access_token=token, user=user_info))
 
@@ -92,6 +93,8 @@ async def register(request: SchoolCreate, db: AsyncSession = Depends(get_db)):
             detail="该统一社会信用代码已被注册",
         )
     from app.services.auth import get_password_hash
+    from app.repositories.user import ApprovalRepository
+
     school = await register_school(request.model_dump(), db)
     admin_user = User(
         username=request.name,
@@ -103,6 +106,20 @@ async def register(request: SchoolCreate, db: AsyncSession = Depends(get_db)):
         is_active=False,
     )
     await user_repo.create(admin_user)
+
+    approval_repo = ApprovalRepository(db)
+    approval = ApprovalRecord(
+        type="school_registration",
+        requester_id=admin_user.id,
+        school_id=school.id,
+        status="pending",
+    )
+    await approval_repo.create(approval)
+
+    from app.services.notification import send_school_registration_notification
+    await send_school_registration_notification(school.name, school.id, db)
+
+    await db.flush()
     return APIResponse.success(message="注册申请已提交，请等待审批")
 
 
@@ -124,6 +141,7 @@ async def get_me(current_user: User = Depends(get_current_user_dependency), db: 
         phone=current_user.phone,
         email=current_user.email,
         is_active=current_user.is_active,
+        must_change_password=current_user.must_change_password,
     )
     return APIResponse.success(data=user_info)
 
@@ -181,6 +199,7 @@ async def reset_password(request: ResetPasswordRequest, db: AsyncSession = Depen
         )
     from app.services.auth import get_password_hash
     user.password_hash = get_password_hash(request.new_password)
+    user.must_change_password = False
     user.current_token = ""
     await db.flush()
     return APIResponse.success(message="密码重置成功")

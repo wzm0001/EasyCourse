@@ -13,13 +13,16 @@ import {
   UserSwitchOutlined,
   RocketOutlined,
   EyeOutlined,
+  OrderedListOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
 import { UserRole } from '@/types/auth';
 import type { MenuProps } from 'antd';
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
+import { getMyTeachingInfo } from '@/api/basicData';
+import { useAppStore as useAppStoreForSemester } from '@/store/app';
 
 const superAdminMenus: MenuProps['items'] = [
   { key: '/dashboard', icon: <DashboardOutlined />, label: '仪表盘' },
@@ -33,7 +36,7 @@ const superAdminMenus: MenuProps['items'] = [
 
 function getSchoolAdminMenus(unreadCount: number): MenuProps['items'] {
   const notificationLabel: ReactNode = unreadCount > 0
-    ? <span>通知中心 <Badge count={unreadCount} size="small" style={{ marginLeft: 4 }} /></span>
+    ? <span>通知中心 <Badge count={unreadCount} size={{ marginLeft: 4 }} size="small" /></span>
     : '通知中心';
   return [
     { key: '/dashboard', icon: <DashboardOutlined />, label: '仪表盘' },
@@ -42,18 +45,6 @@ function getSchoolAdminMenus(unreadCount: number): MenuProps['items'] {
     { key: '/users', icon: <TeamOutlined />, label: '教师管理' },
     { key: '/notifications', icon: <BellOutlined />, label: notificationLabel },
     { key: '/school-settings', icon: <SettingOutlined />, label: '学校设置' },
-  ];
-}
-
-function getTeacherMenus(unreadCount: number): MenuProps['items'] {
-  const notificationLabel: ReactNode = unreadCount > 0
-    ? <span>通知中心 <Badge count={unreadCount} size="small" style={{ marginLeft: 4 }} /></span>
-    : '通知中心';
-  return [
-    { key: '/dashboard', icon: <DashboardOutlined />, label: '仪表盘' },
-    { key: '/my-schedule', icon: <UserOutlined />, label: '我的课表' },
-    { key: '/class-schedule', icon: <TeamOutlined />, label: '班级课表' },
-    { key: '/notifications', icon: <BellOutlined />, label: notificationLabel },
   ];
 }
 
@@ -67,13 +58,45 @@ export default function Sidebar({ onMenuClick }: SidebarProps = {}) {
   const user = useAuthStore((s) => s.user);
   const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed);
   const unreadCount = useAppStore((s) => s.unreadCount);
+  const currentSemester = useAppStoreForSemester((s) => s.currentSemester);
+  const [isHeadTeacher, setIsHeadTeacher] = useState(false);
+  const [isGradeLeader, setIsGradeLeader] = useState(false);
+
+  useEffect(() => {
+    if (user?.role === UserRole.TEACHER && currentSemester) {
+      getMyTeachingInfo(currentSemester).then((res) => {
+        const headTeacherIds = res.data?.head_teacher_class_ids || [];
+        const gradeLeaderIds = res.data?.grade_leader_grade_ids || [];
+        setIsHeadTeacher(headTeacherIds.length > 0);
+        setIsGradeLeader(gradeLeaderIds.length > 0);
+      }).catch(() => {
+        setIsHeadTeacher(false);
+        setIsGradeLeader(false);
+      });
+    } else {
+      setIsHeadTeacher(false);
+      setIsGradeLeader(false);
+    }
+  }, [user?.role, currentSemester]);
+
+  const notificationLabel: ReactNode = unreadCount > 0
+    ? <span>通知中心 <Badge count={unreadCount} size="small" style={{ marginLeft: 4 }} /></span>
+    : '通知中心';
+
+  const teacherMenus: MenuProps['items'] = [
+    { key: '/dashboard', icon: <DashboardOutlined />, label: '仪表盘' },
+    { key: '/my-schedule', icon: <UserOutlined />, label: '我的课表' },
+    ...(isHeadTeacher ? [{ key: '/class-schedule', icon: <TeamOutlined />, label: '班级课表' }] : []),
+    ...(isGradeLeader ? [{ key: '/grade-schedule', icon: <OrderedListOutlined />, label: '年级课表' }] : []),
+    { key: '/notifications', icon: <BellOutlined />, label: notificationLabel },
+  ];
 
   const menuItems = user
     ? user.role === UserRole.SUPER_ADMIN
       ? superAdminMenus
       : user.role === UserRole.SCHOOL_ADMIN
         ? getSchoolAdminMenus(unreadCount)
-        : getTeacherMenus(unreadCount)
+        : teacherMenus
     : [];
 
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {

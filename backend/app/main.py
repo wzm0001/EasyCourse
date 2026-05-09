@@ -33,6 +33,9 @@ async def lifespan(app: FastAPI):
     from app.database import AsyncSessionLocal
     from sqlalchemy import select
     from app.models.user import User, UserRole, School
+    from app.repositories.user import UserRepository
+    from app.services.auth import get_password_hash
+
     async with AsyncSessionLocal() as db:
         result = await db.execute(
             select(User, School).join(School, User.school_id == School.id).where(User.role == UserRole.SCHOOL_ADMIN)
@@ -47,7 +50,28 @@ async def lifespan(app: FastAPI):
                     user.username = school.name
         if rows:
             await db.flush()
+
+        user_repo = UserRepository(db)
+        existing_admin = await user_repo.get_by_username("admin")
+        if not existing_admin:
+            admin = User(
+                username="admin",
+                password_hash=get_password_hash(settings.DEFAULT_ADMIN_PASSWORD),
+                real_name="超级管理员",
+                role=UserRole.SUPER_ADMIN,
+                is_active=True,
+                must_change_password=True,
+            )
+            db.add(admin)
+            print("=" * 40)
+            print("  已自动创建默认超级管理员账号")
+            print(f"  用户名: admin")
+            print("  密码已通过环境变量 DEFAULT_ADMIN_PASSWORD 配置")
+            print("  首次登录后将被强制要求修改密码！")
+            print("=" * 40)
+
         await db.commit()
+
     scheduler = setup_auto_backup(None)
     yield
     scheduler.shutdown()

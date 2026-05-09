@@ -6,7 +6,7 @@ interface ScheduleCellData {
   course_name: string;
   teacher_name: string;
   classroom_name?: string;
-  is_fixed: boolean;
+  is_locked: boolean;
   has_conflict: boolean;
   class_name?: string;
 }
@@ -57,8 +57,8 @@ export default function ScheduleTable({
           );
         }
 
-        const bgColor = cell.has_conflict ? '#fff1f0' : '#f6ffed';
-        const borderColor = cell.has_conflict ? '#ff4d4f' : '#b7eb8f';
+        const bgColor = cell.has_conflict ? '#fff1f0' : cell.is_locked ? '#fff7e6' : '#f6ffed';
+        const borderColor = cell.has_conflict ? '#ff4d4f' : cell.is_locked ? '#faad14' : '#b7eb8f';
 
         return (
           <Tooltip
@@ -67,7 +67,7 @@ export default function ScheduleTable({
                 <div>{cell.course_name}</div>
                 <div>{cell.teacher_name}</div>
                 {cell.classroom_name && <div>{cell.classroom_name}</div>}
-                {cell.is_fixed && <div>已固定</div>}
+                {cell.is_locked && <div>已锁定</div>}
                 {cell.has_conflict && <div style={{ color: '#ff4d4f' }}>存在冲突</div>}
               </div>
             }
@@ -85,10 +85,19 @@ export default function ScheduleTable({
             >
               <div style={{ fontSize: 13, fontWeight: 500 }}>{cell.course_name}</div>
               <div style={{ fontSize: 12, color: '#666' }}>{cell.teacher_name}</div>
-              {viewMode !== 'class' && cell.class_name && (
+              {viewMode === 'teacher' && cell.class_name && (
                 <div style={{ fontSize: 12, color: '#999' }}>{cell.class_name}</div>
               )}
-              {cell.is_fixed && (
+              {viewMode === 'teacher' && cell.classroom_name && (
+                <div style={{ fontSize: 12, color: '#999' }}>{cell.classroom_name}</div>
+              )}
+              {viewMode === 'class' && cell.classroom_name && (
+                <div style={{ fontSize: 12, color: '#999' }}>{cell.classroom_name}</div>
+              )}
+              {viewMode === 'classroom' && cell.class_name && (
+                <div style={{ fontSize: 12, color: '#999' }}>{cell.class_name}</div>
+              )}
+              {cell.is_locked && (
                 <LockOutlined
                   style={{
                     position: 'absolute',
@@ -100,7 +109,7 @@ export default function ScheduleTable({
                 />
               )}
               {cell.has_conflict && (
-                <Tag color="error" style={{ position: 'absolute', top: 2, right: cell.is_fixed ? 20 : 4, fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>
+                <Tag color="error" style={{ position: 'absolute', top: 2, right: cell.is_locked ? 20 : 4, fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>
                   冲突
                 </Tag>
               )}

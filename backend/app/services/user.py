@@ -59,6 +59,27 @@ async def create_teacher(teacher_data: dict, school_id: str, db: AsyncSession) -
         is_active=True,
     )
     user = await user_repo.create(user)
+
+    from app.models.basic_data import Teacher
+    from app.repositories.semester import SemesterRepository
+    semester_repo = SemesterRepository(db)
+    active_semester = await semester_repo.get_active(school_id)
+    if active_semester:
+        from app.repositories.base import BaseRepository
+        teacher_repo = BaseRepository(Teacher, db)
+        teacher = Teacher(
+            school_id=school_id,
+            semester_id=active_semester.id,
+            user_id=user.id,
+            name=user.real_name or user.username,
+            phone=user.phone or "",
+            employee_id="",
+            gender="",
+            teaching_group="",
+            specialization="",
+        )
+        await teacher_repo.create(teacher)
+
     return user
 
 
@@ -82,7 +103,7 @@ async def change_password(user_id: str, old_password: str, new_password: str, db
         return False
     if not verify_password(old_password, user.password_hash):
         return False
-    await user_repo.update(user_id, {"password_hash": get_password_hash(new_password)})
+    await user_repo.update(user_id, {"password_hash": get_password_hash(new_password), "must_change_password": False})
     return True
 
 

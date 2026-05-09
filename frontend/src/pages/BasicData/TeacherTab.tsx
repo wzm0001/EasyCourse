@@ -1,11 +1,12 @@
 import { useRef, useState, useEffect } from 'react';
-import { Button, Space, Popconfirm, Modal, Form, Input, Select, Transfer, Tag, App } from 'antd';
+import { Button, Space, Popconfirm, Modal, Form, Input, Transfer, Tag, App } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getTeachers, createTeacher, updateTeacher, deleteTeacher, getTeacherCourses, setTeacherCourses, getCourses } from '@/api/basicData';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useAppStore } from '@/store/app';
+import TeacherForm from '@/components/TeacherForm';
 
 export default function TeacherTab() {
   const { message } = App.useApp();
@@ -21,6 +22,10 @@ export default function TeacherTab() {
   const currentSemester = useAppStore((s) => s.currentSemester);
 
   useEffect(() => {
+    actionRef.current?.reload();
+  }, [currentSemester]);
+
+  useEffect(() => {
     getCourses({ page: 1, page_size: 200 }).then((res) => setAllCourses(res.items || []));
   }, []);
 
@@ -28,7 +33,7 @@ export default function TeacherTab() {
     setTeacherId(record.id);
     try {
       const res = await getTeacherCourses(record.id);
-      const ids = (res.data || []).map((c: any) => c.id || c.course_id);
+      const ids = (res.data || []).map((c: any) => c.course_id);
       setSelectedCourseKeys(ids);
     } catch {
       setSelectedCourseKeys([]);
@@ -37,11 +42,10 @@ export default function TeacherTab() {
   };
 
   const columns: ProColumns<any>[] = [
-    { title: '教师姓名', dataIndex: 'real_name', width: 120 },
-    { title: '用户名', dataIndex: 'username', width: 120 },
-    { title: '工号', dataIndex: 'code', width: 100 },
-    { title: '性别', dataIndex: 'gender', width: 60, search: false, valueEnum: { male: { text: '男' }, female: { text: '女' } } },
-    { title: '手机号', dataIndex: 'phone', width: 130, search: false },
+    { title: '教师姓名', dataIndex: 'name', width: 120 },
+    { title: '工号', dataIndex: 'employee_id', width: 100, search: false },
+    { title: '教研组', dataIndex: 'teaching_group', width: 100, search: false },
+    { title: '专业', dataIndex: 'specialization', width: 120, search: false },
     {
       title: '任教课程',
       dataIndex: 'course_names',
@@ -61,7 +65,12 @@ export default function TeacherTab() {
         <Space>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setEditData(record); form.setFieldsValue(record); setFormOpen(true); }}>编辑</Button>
           <Button type="link" size="small" onClick={() => openCourseAssign(record)}>分配课程</Button>
-          <Popconfirm title="确定删除吗？" onConfirm={async () => { try { await deleteTeacher(record.id); message.success('删除成功'); actionRef.current?.reload(); } catch { message.error('删除失败'); } }}>
+          <Popconfirm
+            title="确定删除该教师吗？"
+            description="删除教师将同时清除该教师的所有关联数据，包括教学安排、排课记录、课程分配和登录账号，此操作不可恢复。"
+            onConfirm={async () => { try { await deleteTeacher(record.id); message.success('删除成功'); actionRef.current?.reload(); } catch { message.error('删除失败'); } }}
+            okButtonProps={{ danger: true }}
+          >
             <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
           </Popconfirm>
         </Space>
@@ -75,7 +84,7 @@ export default function TeacherTab() {
         columns={columns}
         actionRef={actionRef}
         request={async (params) => {
-          const result = await getTeachers({ page: params.current || 1, page_size: params.pageSize || 10, real_name: params.real_name, code: params.code, semester_id: currentSemester || undefined });
+          const result = await getTeachers({ page: params.current || 1, page_size: params.pageSize || 10, name: params.name, semester_id: currentSemester || undefined });
           return { data: result.items, total: result.total, success: true };
         }}
         rowKey="id"
@@ -93,22 +102,14 @@ export default function TeacherTab() {
           try {
             const values = await form.validateFields();
             if (editData) { await updateTeacher(editData.id, values); message.success('更新成功'); }
-            else { await createTeacher({ ...values, semester_id: currentSemester }); message.success('创建成功'); }
+            else { await createTeacher(values, currentSemester || undefined); message.success('创建成功'); }
             actionRef.current?.reload(); setFormOpen(false); setEditData(null);
           } catch { message.error('操作失败'); }
         }}
         destroyOnHidden
         width={isMobile ? '90vw' : 520}
       >
-        <Form form={form} layout="vertical">
-          <Form.Item name="real_name" label="教师姓名" rules={[{ required: true, message: '请输入教师姓名' }]}><Input /></Form.Item>
-          <Form.Item name="code" label="工号" rules={[{ required: true, message: '请输入工号' }]}><Input /></Form.Item>
-          <Form.Item name="gender" label="性别">
-            <Select options={[{ label: '男', value: 'male' }, { label: '女', value: 'female' }]} placeholder="请选择性别" />
-          </Form.Item>
-          <Form.Item name="phone" label="手机号"><Input /></Form.Item>
-          <Form.Item name="email" label="邮箱"><Input /></Form.Item>
-        </Form>
+        <TeacherForm form={form} showPasswordHint={!editData} />
       </Modal>
       <Modal
         title="分配课程"

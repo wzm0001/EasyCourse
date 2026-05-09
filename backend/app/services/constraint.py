@@ -72,7 +72,7 @@ async def _build_constraint_info(constraint: ScheduleConstraint, db: AsyncSessio
     if constraint.classroom_id:
         classroom_repo = ClassroomRepository(db)
         classroom = await classroom_repo.get_by_id(constraint.classroom_id)
-        classroom_name = classroom.name if classroom else None
+        classroom_name = f"{classroom.building_name} {classroom.room_number}" if classroom else None
 
     if constraint.grade_id:
         grade_repo = GradeRepository(db)

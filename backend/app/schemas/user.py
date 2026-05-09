@@ -19,6 +19,7 @@ class UserInfo(BaseModel):
     phone: str = ""
     email: str = ""
     is_active: bool = True
+    must_change_password: bool = False
     created_by: Optional[str] = None
 
     model_config = {"from_attributes": True}

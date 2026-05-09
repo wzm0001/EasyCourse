@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./uploads"
     DEBUG: bool = False
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
+    DEFAULT_ADMIN_PASSWORD: str = "Admin@123"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

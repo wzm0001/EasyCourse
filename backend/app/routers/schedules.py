@@ -10,10 +10,12 @@ from app.schemas.schedule import (
     ScheduleCellCreate, ScheduleCellUpdate, ScheduleCellInfo,
     ScheduleGrid, AutoScheduleRequest, AutoScheduleResult,
     SwapRequest, ScheduleLockInfo, ClearScheduleRequest,
+    DragDropRequest, CellMoveRequest, ConflictCheckRequest, ConflictInfo,
 )
 from app.services import schedule as schedule_service
 from app.middleware.auth import get_current_user_dependency
 from app.repositories.semester import SemesterRepository
+from app.utils.semester_guard import check_semester_writable, resolve_semester_id_with_archive_check
 
 router = APIRouter(prefix="/schedules", tags=["排课管理"])
 
@@ -26,7 +28,9 @@ async def get_school_id(current_user: User) -> str:
     return current_user.school_id
 
 
-async def resolve_semester_id(db: AsyncSession, school_id: str, semester_id: Optional[str]) -> str:
+async def resolve_semester_id(db: AsyncSession, school_id: str, semester_id: Optional[str], check_archive: bool = False) -> str:
+    if check_archive:
+        return await resolve_semester_id_with_archive_check(db, school_id, semester_id, raise_if_missing=True)
     if semester_id:
         return semester_id
     semester_repo = SemesterRepository(db)
@@ -132,7 +136,7 @@ async def place_schedule_cell(
     school_id = await get_school_id(current_user) if current_user.role != UserRole.SUPER_ADMIN else current_user.school_id
     if not school_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前用户未关联学校")
-    sid = await resolve_semester_id(db, school_id, semester_id)
+    sid = await resolve_semester_id(db, school_id, semester_id, check_archive=True)
     try:
         cell, conflicts = await schedule_service.place_cell(request.model_dump(), school_id, sid, db)
     except ValueError as e:
@@ -153,12 +157,109 @@ async def place_schedule_cell(
         teacher_name = teacher.name if teacher else None
     if cell.classroom_id:
         classroom = await classroom_repo.get_by_id(cell.classroom_id)
-        classroom_name = classroom.name if classroom else None
+        classroom_name = f"{classroom.building_name} {classroom.room_number}" if classroom else None
 
     info = schedule_service._cell_to_info(cell, course_name, teacher_name, classroom_name)
     if conflicts:
         return APIResponse(data=info, message=f"放置成功，但存在{len(conflicts)}个冲突", code=0)
     return APIResponse.success(data=info)
+
+
+@router.post("/drag-drop", response_model=APIResponse[ScheduleCellInfo])
+async def drag_drop_schedule(
+    request: DragDropRequest,
+    semester_id: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user_dependency),
+    db: AsyncSession = Depends(get_db),
+):
+    school_id = await get_school_id(current_user) if current_user.role != UserRole.SUPER_ADMIN else current_user.school_id
+    if not school_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前用户未关联学校")
+    sid = await resolve_semester_id(db, school_id, semester_id, check_archive=True)
+    try:
+        cell, conflicts = await schedule_service.drag_drop_place(request.model_dump(), school_id, sid, db)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    from app.repositories.basic_data import CourseRepository, TeacherRepository, ClassroomRepository
+    course_repo = CourseRepository(db)
+    teacher_repo = TeacherRepository(db)
+    classroom_repo = ClassroomRepository(db)
+    course_name = None
+    teacher_name = None
+    classroom_name = None
+    if cell.course_id:
+        course = await course_repo.get_by_id(cell.course_id)
+        course_name = course.name if course else None
+    if cell.teacher_id:
+        teacher = await teacher_repo.get_by_id(cell.teacher_id)
+        teacher_name = teacher.name if teacher else None
+    if cell.classroom_id:
+        classroom = await classroom_repo.get_by_id(cell.classroom_id)
+        classroom_name = f"{classroom.building_name} {classroom.room_number}" if classroom else None
+
+    info = schedule_service._cell_to_info(cell, course_name, teacher_name, classroom_name)
+    if conflicts:
+        return APIResponse(data=info, message=f"放置成功，但存在{len(conflicts)}个冲突", code=0)
+    return APIResponse.success(data=info)
+
+
+@router.post("/move", response_model=APIResponse[ScheduleCellInfo])
+async def move_schedule_cell(
+    request: CellMoveRequest,
+    semester_id: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user_dependency),
+    db: AsyncSession = Depends(get_db),
+):
+    school_id = await get_school_id(current_user) if current_user.role != UserRole.SUPER_ADMIN else current_user.school_id
+    if not school_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前用户未关联学校")
+    sid = await resolve_semester_id(db, school_id, semester_id, check_archive=True)
+    try:
+        cell, conflicts = await schedule_service.move_cell(
+            request.cell_id, request.target_day_of_week,
+            request.target_period_type, request.target_period_index,
+            school_id, sid, db,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    from app.repositories.basic_data import CourseRepository, TeacherRepository, ClassroomRepository
+    course_repo = CourseRepository(db)
+    teacher_repo = TeacherRepository(db)
+    classroom_repo = ClassroomRepository(db)
+    course_name = None
+    teacher_name = None
+    classroom_name = None
+    if cell.course_id:
+        course = await course_repo.get_by_id(cell.course_id)
+        course_name = course.name if course else None
+    if cell.teacher_id:
+        teacher = await teacher_repo.get_by_id(cell.teacher_id)
+        teacher_name = teacher.name if teacher else None
+    if cell.classroom_id:
+        classroom = await classroom_repo.get_by_id(cell.classroom_id)
+        classroom_name = f"{classroom.building_name} {classroom.room_number}" if classroom else None
+
+    info = schedule_service._cell_to_info(cell, course_name, teacher_name, classroom_name)
+    if conflicts:
+        return APIResponse(data=info, message=f"移动成功，但存在{len(conflicts)}个冲突", code=0)
+    return APIResponse.success(data=info)
+
+
+@router.post("/conflict-check", response_model=APIResponse[List[ConflictInfo]])
+async def check_conflicts(
+    request: ConflictCheckRequest,
+    semester_id: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user_dependency),
+    db: AsyncSession = Depends(get_db),
+):
+    school_id = await get_school_id(current_user) if current_user.role != UserRole.SUPER_ADMIN else current_user.school_id
+    if not school_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前用户未关联学校")
+    sid = await resolve_semester_id(db, school_id, semester_id)
+    conflicts = await schedule_service.realtime_conflict_check(request, sid, db)
+    return APIResponse.success(data=conflicts)
 
 
 @router.delete("/cells/{cell_id}", response_model=APIResponse)
@@ -167,6 +268,12 @@ async def remove_schedule_cell(
     current_user: User = Depends(get_current_user_dependency),
     db: AsyncSession = Depends(get_db),
 ):
+    from app.repositories.schedule import ScheduleCellRepository
+    cell_repo = ScheduleCellRepository(db)
+    cell = await cell_repo.get_by_id(cell_id)
+    if not cell:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="单元格不存在")
+    await check_semester_writable(db, cell.semester_id)
     try:
         removed = await schedule_service.remove_cell(cell_id, db)
     except ValueError as e:
@@ -176,13 +283,22 @@ async def remove_schedule_cell(
     return APIResponse.success(message="移除成功")
 
 
-@router.post("/cells/{cell_id}/fix", response_model=APIResponse[ScheduleCellInfo])
-async def fix_schedule_cell(
+@router.post("/cells/{cell_id}/lock", response_model=APIResponse[ScheduleCellInfo])
+async def lock_schedule_cell(
     cell_id: str,
     current_user: User = Depends(get_current_user_dependency),
     db: AsyncSession = Depends(get_db),
 ):
-    cell = await schedule_service.fix_cell(cell_id, db)
+    from app.repositories.schedule import ScheduleCellRepository
+    cell_repo = ScheduleCellRepository(db)
+    cell_record = await cell_repo.get_by_id(cell_id)
+    if not cell_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="单元格不存在")
+    await check_semester_writable(db, cell_record.semester_id)
+    try:
+        cell = await schedule_service.lock_cell(cell_id, db)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     if not cell:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="单元格不存在")
     from app.repositories.basic_data import CourseRepository, TeacherRepository, ClassroomRepository
@@ -200,18 +316,24 @@ async def fix_schedule_cell(
         teacher_name = teacher.name if teacher else None
     if cell.classroom_id:
         classroom = await classroom_repo.get_by_id(cell.classroom_id)
-        classroom_name = classroom.name if classroom else None
+        classroom_name = f"{classroom.building_name} {classroom.room_number}" if classroom else None
     info = schedule_service._cell_to_info(cell, course_name, teacher_name, classroom_name)
     return APIResponse.success(data=info)
 
 
-@router.post("/cells/{cell_id}/unfix", response_model=APIResponse[ScheduleCellInfo])
-async def unfix_schedule_cell(
+@router.post("/cells/{cell_id}/unlock", response_model=APIResponse[ScheduleCellInfo])
+async def unlock_schedule_cell(
     cell_id: str,
     current_user: User = Depends(get_current_user_dependency),
     db: AsyncSession = Depends(get_db),
 ):
-    cell = await schedule_service.unfix_cell(cell_id, db)
+    from app.repositories.schedule import ScheduleCellRepository
+    cell_repo = ScheduleCellRepository(db)
+    cell_record = await cell_repo.get_by_id(cell_id)
+    if not cell_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="单元格不存在")
+    await check_semester_writable(db, cell_record.semester_id)
+    cell = await schedule_service.unlock_cell(cell_id, db)
     if not cell:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="单元格不存在")
     from app.repositories.basic_data import CourseRepository, TeacherRepository, ClassroomRepository
@@ -229,7 +351,7 @@ async def unfix_schedule_cell(
         teacher_name = teacher.name if teacher else None
     if cell.classroom_id:
         classroom = await classroom_repo.get_by_id(cell.classroom_id)
-        classroom_name = classroom.name if classroom else None
+        classroom_name = f"{classroom.building_name} {classroom.room_number}" if classroom else None
     info = schedule_service._cell_to_info(cell, course_name, teacher_name, classroom_name)
     return APIResponse.success(data=info)
 
@@ -240,6 +362,12 @@ async def swap_schedule_cells(
     current_user: User = Depends(get_current_user_dependency),
     db: AsyncSession = Depends(get_db),
 ):
+    from app.repositories.schedule import ScheduleCellRepository
+    cell_repo = ScheduleCellRepository(db)
+    cell1 = await cell_repo.get_by_id(request.cell_id_1)
+    if not cell1:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="单元格1不存在")
+    await check_semester_writable(db, cell1.semester_id)
     try:
         success, conflicts = await schedule_service.swap_cells(request.cell_id_1, request.cell_id_2, db)
     except ValueError as e:
@@ -258,7 +386,8 @@ async def auto_schedule(
     school_id = await get_school_id(current_user) if current_user.role != UserRole.SUPER_ADMIN else current_user.school_id
     if not school_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前用户未关联学校")
-    result = await schedule_service.auto_schedule(school_id, request.semester_id, request.grade_id, db)
+    await check_semester_writable(db, request.semester_id)
+    result = await schedule_service.auto_schedule(school_id, request.semester_id, request.grade_id, request.keep_locked, db)
     return APIResponse.success(data=result)
 
 
@@ -271,8 +400,9 @@ async def clear_schedule(
     school_id = await get_school_id(current_user) if current_user.role != UserRole.SUPER_ADMIN else current_user.school_id
     if not school_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前用户未关联学校")
-    count = await schedule_service.clear_schedule(school_id, request.semester_id, request.grade_id, db)
-    return APIResponse.success(message=f"已清除{count}条非固定排课记录")
+    await check_semester_writable(db, request.semester_id)
+    count = await schedule_service.clear_schedule(school_id, request.semester_id, request.grade_id, request.keep_locked, db)
+    return APIResponse.success(message=f"已清除{count}条排课记录")
 
 
 @router.get("/lock", response_model=APIResponse[ScheduleLockInfo])
@@ -294,6 +424,7 @@ async def acquire_schedule_lock(
     school_id = await get_school_id(current_user) if current_user.role != UserRole.SUPER_ADMIN else current_user.school_id
     if not school_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前用户未关联学校")
+    await check_semester_writable(db, semester_id)
     acquired = await schedule_service.acquire_lock(semester_id, school_id, current_user.id, db)
     if not acquired:
         lock_info = await schedule_service.check_lock(semester_id, db)

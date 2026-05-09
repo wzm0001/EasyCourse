@@ -26,6 +26,7 @@ from app.services.period import (
     apply_template,
 )
 from app.middleware.auth import get_current_user_dependency
+from app.utils.semester_guard import check_semester_writable
 
 router = APIRouter(prefix="/periods", tags=["时间段管理"])
 
@@ -69,6 +70,7 @@ async def setup_grade_periods_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     school_id = _ensure_school_access(current_user)
+    await check_semester_writable(db, semester_id)
     data.grade_id = grade_id
     result = await setup_grade_periods(data, school_id, semester_id, db)
     return APIResponse.success(data=result)
@@ -95,6 +97,7 @@ async def setup_day_periods_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     school_id = _ensure_school_access(current_user)
+    await check_semester_writable(db, semester_id)
     data.grade_id = grade_id
     result = await setup_day_periods(data, school_id, semester_id, db)
     return APIResponse.success(data=result)
@@ -161,6 +164,7 @@ async def apply_template_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     school_id = _ensure_school_access(current_user)
+    await check_semester_writable(db, semester_id)
     result = await apply_template(template_id, grade_id, semester_id, school_id, db)
     if result is None:
         raise HTTPException(

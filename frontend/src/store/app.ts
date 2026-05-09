@@ -7,6 +7,7 @@ interface AppState {
   mobileDrawerOpen: boolean;
   currentSemester: string | null;
   currentSemesterName: string | null;
+  currentSemesterArchived: boolean;
   unreadCount: number;
   toggleTheme: () => void;
   toggleSidebar: () => void;
@@ -22,6 +23,7 @@ export const useAppStore = create<AppState>((set) => ({
   mobileDrawerOpen: false,
   currentSemester: null,
   currentSemesterName: null,
+  currentSemesterArchived: false,
   unreadCount: 0,
 
   toggleTheme: () =>
@@ -48,12 +50,16 @@ export const useAppStore = create<AppState>((set) => ({
       const res = await getActiveSemester();
       const data = (res as any)?.data || res;
       if (data && data.id) {
-        set({ currentSemester: data.id, currentSemesterName: data.name });
+        set({
+          currentSemester: data.id,
+          currentSemesterName: data.name,
+          currentSemesterArchived: data.is_archived || data.status === 'archived',
+        });
       } else {
-        set({ currentSemester: null, currentSemesterName: null });
+        set({ currentSemester: null, currentSemesterName: null, currentSemesterArchived: false });
       }
     } catch {
-      set({ currentSemester: null, currentSemesterName: null });
+      set({ currentSemester: null, currentSemesterName: null, currentSemesterArchived: false });
     }
   },
 }));

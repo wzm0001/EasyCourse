@@ -2,28 +2,19 @@ import { useState } from 'react';
 import { Steps, Card, Button, Space } from 'antd';
 import {
   CalendarOutlined,
-  ClockCircleOutlined,
   DatabaseOutlined,
-  SwapOutlined,
-  SafetyCertificateOutlined,
   TableOutlined,
   ExportOutlined,
 } from '@ant-design/icons';
 import SemesterManage from '@/pages/SemesterManage';
-import PeriodConfig from '@/pages/PeriodConfig';
 import BasicData from '@/pages/BasicData';
-import TeachingClass from '@/pages/TeachingClass';
-import ConstraintConfig from '@/pages/ConstraintConfig';
 import Schedule from '@/pages/Schedule';
 import Export from '@/pages/Export';
 import { useResponsive } from '@/hooks/useResponsive';
 
 const STEPS = [
   { title: '学期设置', icon: <CalendarOutlined /> },
-  { title: '时间段配置', icon: <ClockCircleOutlined /> },
   { title: '基础数据', icon: <DatabaseOutlined /> },
-  { title: '教学班管理', icon: <SwapOutlined /> },
-  { title: '排课规则', icon: <SafetyCertificateOutlined /> },
   { title: '排课', icon: <TableOutlined /> },
   { title: '导出课表', icon: <ExportOutlined /> },
 ];
@@ -35,12 +26,9 @@ export default function ScheduleWizard() {
   const renderContent = () => {
     switch (current) {
       case 0: return <SemesterManage embedded />;
-      case 1: return <PeriodConfig embedded />;
-      case 2: return <BasicData embedded />;
-      case 3: return <TeachingClass embedded />;
-      case 4: return <ConstraintConfig embedded />;
-      case 5: return <Schedule embedded />;
-      case 6: return <Export embedded />;
+      case 1: return <BasicData embedded />;
+      case 2: return <Schedule embedded />;
+      case 3: return <Export embedded />;
       default: return null;
     }
   };
@@ -57,7 +45,7 @@ export default function ScheduleWizard() {
           onChange={setCurrent}
           size={isMobile ? 'small' : 'default'}
           direction={isMobile ? 'vertical' : 'horizontal'}
-          items={STEPS.map((s, i) => ({
+          items={STEPS.map((s) => ({
             title: s.title,
             icon: s.icon,
             style: { cursor: 'pointer' },

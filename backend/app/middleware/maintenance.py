@@ -5,6 +5,9 @@ from starlette.responses import JSONResponse, Response
 
 class MaintenanceMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
+        if request.url.path in ["/docs", "/redoc", "/openapi.json"]:
+            return await call_next(request)
+
         try:
             from app.database import AsyncSessionLocal
             from app.services.settings import is_maintenance_mode

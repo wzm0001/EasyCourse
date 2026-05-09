@@ -3,7 +3,6 @@ import { Card, Tabs, Button } from 'antd';
 import { ImportOutlined } from '@ant-design/icons';
 import GradeTab from './GradeTab';
 import ClassTab from './ClassTab';
-import CourseTab from './CourseTab';
 import TeacherTab from './TeacherTab';
 import ClassroomTab from './ClassroomTab';
 import ArrangementTab from './ArrangementTab';
@@ -17,13 +16,12 @@ export default function BasicData({ embedded }: { embedded?: boolean } = {}) {
   const content = (
     <>
       <Tabs
-        defaultActiveKey="grade"
+        defaultActiveKey="teacher"
         items={[
-          { key: 'grade', label: '年级', children: <GradeTab /> },
-          { key: 'classroom', label: '教室', children: <ClassroomTab /> },
-          { key: 'class', label: '班级', children: <ClassTab /> },
-          { key: 'course', label: '课程', children: <CourseTab /> },
-          { key: 'teacher', label: '教师', children: <TeacherTab /> },
+          { key: 'teacher', label: '教师信息', children: <TeacherTab /> },
+          { key: 'classroom', label: '教室信息', children: <ClassroomTab /> },
+          { key: 'grade', label: '年级信息', children: <GradeTab /> },
+          { key: 'class', label: '班级信息', children: <ClassTab /> },
           { key: 'arrangement', label: '教学安排', children: <ArrangementTab /> },
         ]}
       />

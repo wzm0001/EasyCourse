@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import { useAppStore } from '@/store/app';
 import { useResponsive } from '@/hooks/useResponsive';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { getUnreadCount } from '@/api/notifications';
 import { useEffect } from 'react';
 import { useAuthStore } from '@/store/auth';
@@ -14,6 +15,7 @@ export default function MainLayout() {
   const { sidebarCollapsed, theme, mobileDrawerOpen, setMobileDrawerOpen, setUnreadCount } = useAppStore();
   const { isMobile } = useResponsive();
   const token = useAuthStore((s) => s.token);
+  useDocumentTitle();
 
   useEffect(() => {
     if (!token) return;

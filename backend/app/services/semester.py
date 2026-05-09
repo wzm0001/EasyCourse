@@ -1,9 +1,17 @@
 from datetime import date
 from typing import Optional
 
+from fastapi import HTTPException, status
+from sqlalchemy import delete as sa_delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.semester import Semester
+from app.models.schedule import ScheduleCell, ScheduleLock
+from app.models.basic_data import (
+    Grade, Class_, GradeCourse, Teacher, TeacherCourse,
+    Classroom, ClassroomCourse, TeachingArrangement,
+)
+from app.models.constraint import ScheduleConstraint
 from app.repositories.semester import SemesterRepository
 
 
@@ -28,6 +36,8 @@ async def update_semester(semester_id: str, data: dict, db: AsyncSession) -> Opt
     semester = await repo.get_by_id(semester_id)
     if semester is None:
         return None
+    if semester.is_archived:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="该学期已归档，无法修改")
     update_data = {}
     for key, value in data.items():
         if value is None:
@@ -49,7 +59,7 @@ async def set_active_semester(semester_id: str, school_id: str, db: AsyncSession
     if semester.school_id != school_id:
         return None
     if semester.is_archived:
-        return None
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="已归档的学期无法激活，请先取消归档")
     current_active = await repo.get_active(school_id)
     if current_active is not None:
         await repo.update(current_active.id, {"is_active": False})
@@ -69,6 +79,17 @@ async def archive_semester(semester_id: str, db: AsyncSession) -> Optional[Semes
     return await repo.get_by_id(semester_id)
 
 
+async def unarchive_semester(semester_id: str, db: AsyncSession) -> Optional[Semester]:
+    repo = SemesterRepository(db)
+    semester = await repo.get_by_id(semester_id)
+    if semester is None:
+        return None
+    if not semester.is_archived:
+        return semester
+    await repo.update(semester_id, {"is_archived": False})
+    return await repo.get_by_id(semester_id)
+
+
 async def copy_semester_data(source_semester_id: str, target_semester_id: str, db: AsyncSession) -> Optional[Semester]:
     repo = SemesterRepository(db)
     source = await repo.get_by_id(source_semester_id)
@@ -83,3 +104,28 @@ async def copy_semester_data(source_semester_id: str, target_semester_id: str, d
 async def get_semesters(school_id: str, page: int, page_size: int, db: AsyncSession) -> tuple[list, int]:
     repo = SemesterRepository(db)
     return await repo.get_by_school(school_id, page=page, page_size=page_size)
+
+
+async def delete_semester(semester_id: str, db: AsyncSession) -> bool:
+    repo = SemesterRepository(db)
+    semester = await repo.get_by_id(semester_id)
+    if semester is None:
+        return False
+    if semester.is_active:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="无法删除当前激活的学期，请先激活其他学期")
+
+    await db.execute(sa_delete(ScheduleCell).where(ScheduleCell.semester_id == semester_id))
+    await db.execute(sa_delete(ScheduleLock).where(ScheduleLock.semester_id == semester_id))
+    await db.execute(sa_delete(TeachingArrangement).where(TeachingArrangement.semester_id == semester_id))
+    await db.execute(sa_delete(TeacherCourse).where(TeacherCourse.semester_id == semester_id))
+    await db.execute(sa_delete(ClassroomCourse).where(ClassroomCourse.semester_id == semester_id))
+    await db.execute(sa_delete(GradeCourse).where(GradeCourse.semester_id == semester_id))
+    await db.execute(sa_delete(Class_).where(Class_.semester_id == semester_id))
+    await db.execute(sa_delete(ScheduleConstraint).where(ScheduleConstraint.semester_id == semester_id))
+    await db.execute(sa_delete(Teacher).where(Teacher.semester_id == semester_id))
+    await db.execute(sa_delete(Classroom).where(Classroom.semester_id == semester_id))
+    await db.execute(sa_delete(Grade).where(Grade.semester_id == semester_id))
+
+    await db.execute(sa_delete(Semester).where(Semester.id == semester_id))
+    await db.flush()
+    return True

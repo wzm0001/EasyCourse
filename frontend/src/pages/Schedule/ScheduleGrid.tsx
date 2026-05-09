@@ -2,14 +2,23 @@ import { Fragment } from 'react';
 import ScheduleCell from './ScheduleCell';
 
 interface ScheduleGridProps {
-  periods: { key: string; label: string }[];
+  periods: { key: string; label: string; period_type?: string; period_index?: number }[];
   days: { key: string; label: string }[];
   data: Record<string, Record<string, any | null>>;
   onCellClick?: (periodKey: string, dayKey: string, cell: any | null) => void;
   viewMode?: 'class' | 'teacher' | 'classroom';
+  swapSourceCellId?: string | null;
+  onDragDropTeacher?: (teacher: any, targetDayKey: string, periodInfo: { period_type: string; period_index: number }, courseId?: string) => void;
+  onDragDropCell?: (sourceCell: any, targetDayKey: string, periodInfo: { period_type: string; period_index: number }) => void;
+  onHoverConflictCheck?: (teacherId: string, dayKey: string, periodInfo: { period_type: string; period_index: number }) => void;
+  onHoverCellConflictCheck?: (cellId: string, teacherId: string, classroomId: string, classId: string, dayKey: string, periodInfo: { period_type: string; period_index: number }) => void;
+  onClearHoverConflicts?: () => void;
 }
 
-export default function ScheduleGrid({ periods, days, data, onCellClick, viewMode = 'class' }: ScheduleGridProps) {
+export default function ScheduleGrid({
+  periods, days, data, onCellClick, viewMode = 'class', swapSourceCellId,
+  onDragDropTeacher, onDragDropCell, onHoverConflictCheck, onHoverCellConflictCheck, onClearHoverConflicts,
+}: ScheduleGridProps) {
   return (
     <div style={{ overflowX: 'auto' }}>
       <div
@@ -45,8 +54,16 @@ export default function ScheduleGrid({ periods, days, data, onCellClick, viewMod
                   cell={data[period.key]?.[day.key] || null}
                   periodKey={period.key}
                   dayKey={day.key}
+                  periodType={period.period_type}
+                  periodIndex={period.period_index}
                   onClick={onCellClick}
                   viewMode={viewMode}
+                  isSwapSource={!!swapSourceCellId && data[period.key]?.[day.key]?.id === swapSourceCellId}
+                  onDragDropTeacher={onDragDropTeacher}
+                  onDragDropCell={onDragDropCell}
+                  onHoverConflictCheck={onHoverConflictCheck}
+                  onHoverCellConflictCheck={onHoverCellConflictCheck}
+                  onClearHoverConflicts={onClearHoverConflicts}
                 />
               </div>
             ))}

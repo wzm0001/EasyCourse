@@ -125,6 +125,10 @@ const router = createBrowserRouter([
         path: 'class-schedule',
         element: <RoleGuard allowedRoles={[UserRole.TEACHER]}><ScheduleView /></RoleGuard>,
       },
+      {
+        path: 'grade-schedule',
+        element: <RoleGuard allowedRoles={[UserRole.TEACHER]}><ScheduleView /></RoleGuard>,
+      },
     ],
   },
   {

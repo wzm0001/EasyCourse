@@ -20,6 +20,7 @@ from app.services.constraint import (
 from app.middleware.auth import get_current_user_dependency
 from app.repositories.semester import SemesterRepository
 from app.repositories.constraint import ConstraintRepository
+from app.utils.semester_guard import check_semester_writable, resolve_semester_id_with_archive_check
 
 router = APIRouter(prefix="/constraints", tags=["排课约束管理"])
 
@@ -32,7 +33,9 @@ async def _get_school_id(current_user: User) -> str:
     return current_user.school_id
 
 
-async def _resolve_semester_id(db: AsyncSession, school_id: str, semester_id: Optional[str]) -> str:
+async def _resolve_semester_id(db: AsyncSession, school_id: str, semester_id: Optional[str], check_archive: bool = False) -> str:
+    if check_archive:
+        return await resolve_semester_id_with_archive_check(db, school_id, semester_id, raise_if_missing=True)
     if semester_id:
         return semester_id
     semester_repo = SemesterRepository(db)
@@ -65,7 +68,7 @@ async def create_constraint_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     school_id = await _get_school_id(current_user)
-    sid = await _resolve_semester_id(db, school_id, semester_id)
+    sid = await _resolve_semester_id(db, school_id, semester_id, check_archive=True)
     try:
         result = await create_constraint(data, school_id, sid, db)
     except ValueError as e:
@@ -112,6 +115,7 @@ async def update_constraint_endpoint(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="约束不存在")
     if current_user.role != UserRole.SUPER_ADMIN and current_user.school_id != existing.school_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    await check_semester_writable(db, existing.semester_id)
     result = await update_constraint(constraint_id, data, db)
     return APIResponse.success(data=result)
 
@@ -128,6 +132,7 @@ async def delete_constraint_endpoint(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="约束不存在")
     if current_user.role != UserRole.SUPER_ADMIN and current_user.school_id != existing.school_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    await check_semester_writable(db, existing.semester_id)
     deleted = await delete_constraint(constraint_id, db)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="删除失败")
@@ -146,5 +151,6 @@ async def toggle_constraint_endpoint(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="约束不存在")
     if current_user.role != UserRole.SUPER_ADMIN and current_user.school_id != existing.school_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    await check_semester_writable(db, existing.semester_id)
     result = await toggle_constraint(constraint_id, db)
     return APIResponse.success(data=result)

@@ -1,17 +1,20 @@
-import { Card, Button, Space, App, Popconfirm, Modal, Form, Input, DatePicker } from 'antd';
-import { PlusOutlined, EditOutlined, CopyOutlined, CheckCircleOutlined, InboxOutlined } from '@ant-design/icons';
+import { Card, Button, Space, App, Popconfirm, Modal, Form, Input, DatePicker, Tag, Tooltip } from 'antd';
+import { PlusOutlined, EditOutlined, CopyOutlined, CheckCircleOutlined, InboxOutlined, RollbackOutlined, LockOutlined, DeleteOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { useState, useRef } from 'react';
 import dayjs from 'dayjs';
 import { useResponsive } from '@/hooks/useResponsive';
+import { useAppStore } from '@/store/app';
 import {
   getSemesters,
   createSemester,
   updateSemester,
   activateSemester,
   archiveSemester,
+  unarchiveSemester,
   copySemester,
+  deleteSemester,
 } from '@/api/semesters';
 
 const { RangePicker } = DatePicker;
@@ -26,18 +29,29 @@ export default function SemesterManage({ embedded }: { embedded?: boolean } = {}
   const [copyForm] = Form.useForm();
   const [form] = Form.useForm();
   const actionRef = useRef<ActionType>(null);
+  const fetchActiveSemester = useAppStore((s) => s.fetchActiveSemester);
 
   const columns: ProColumns<any>[] = [
     { title: '学期名称', dataIndex: 'name', width: 200, ellipsis: true },
     {
       title: '状态',
       dataIndex: 'status',
-      width: 100,
+      width: 120,
       valueEnum: {
         not_started: { text: '未开始', status: 'Default' },
         in_progress: { text: '进行中', status: 'Processing' },
         finished: { text: '已结束', status: 'Warning' },
         archived: { text: '已归档', status: 'Default' },
+      },
+      render: (_, record) => {
+        const statusMap: Record<string, { color: string; text: string; icon?: React.ReactNode }> = {
+          not_started: { color: 'default', text: '未开始' },
+          in_progress: { color: 'processing', text: '进行中', icon: <CheckCircleOutlined /> },
+          finished: { color: 'warning', text: '已结束' },
+          archived: { color: 'red', text: '已归档', icon: <LockOutlined /> },
+        };
+        const s = statusMap[record.status] || statusMap.not_started;
+        return <Tag color={s.color} icon={s.icon}>{s.text}</Tag>;
       },
     },
     { title: '开始日期', dataIndex: 'start_date', width: 120, valueType: 'date', search: false },
@@ -46,74 +60,121 @@ export default function SemesterManage({ embedded }: { embedded?: boolean } = {}
     {
       title: '操作',
       valueType: 'option',
-      width: 280,
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => {
-              setEditData(record);
-              form.setFieldsValue({
-                ...record,
-                date_range: [dayjs(record.start_date), dayjs(record.end_date)],
-              });
-              setFormOpen(true);
-            }}
-          >
-            编辑
-          </Button>
-          {record.status !== 'in_progress' && (
-            <Popconfirm
-              title="确定激活该学期吗？"
-              onConfirm={async () => {
-                try {
-                  await activateSemester(record.id);
-                  message.success('激活成功');
-                  actionRef.current?.reload();
-                } catch {
-                  message.error('激活失败');
-                }
+      width: 320,
+      render: (_, record) => {
+        const isArchived = record.status === 'archived';
+        return (
+          <Space>
+            <Tooltip title={isArchived ? '已归档学期无法编辑' : ''}>
+              <Button
+                type="link"
+                size="small"
+                icon={<EditOutlined />}
+                disabled={isArchived}
+                onClick={() => {
+                  setEditData(record);
+                  form.setFieldsValue({
+                    ...record,
+                    date_range: [dayjs(record.start_date), dayjs(record.end_date)],
+                  });
+                  setFormOpen(true);
+                }}
+              >
+                编辑
+              </Button>
+            </Tooltip>
+            {record.status !== 'in_progress' && !isArchived && (
+              <Popconfirm
+                title="确定激活该学期吗？激活后该学期将成为当前工作学期。"
+                onConfirm={async () => {
+                  try {
+                    await activateSemester(record.id);
+                    message.success('激活成功');
+                    fetchActiveSemester();
+                    actionRef.current?.reload();
+                  } catch {
+                    message.error('激活失败');
+                  }
+                }}
+              >
+                <Button type="link" size="small" icon={<CheckCircleOutlined />}>
+                  激活
+                </Button>
+              </Popconfirm>
+            )}
+            {isArchived && (
+              <Popconfirm
+                title="确定取消归档该学期吗？取消归档后可以重新编辑和激活该学期。"
+                onConfirm={async () => {
+                  try {
+                    await unarchiveSemester(record.id);
+                    message.success('取消归档成功');
+                    fetchActiveSemester();
+                    actionRef.current?.reload();
+                  } catch {
+                    message.error('取消归档失败');
+                  }
+                }}
+              >
+                <Button type="link" size="small" icon={<RollbackOutlined />}>
+                  取消归档
+                </Button>
+              </Popconfirm>
+            )}
+            {!isArchived && record.status !== 'in_progress' && (
+              <Popconfirm
+                title="确定归档该学期吗？归档后该学期的所有数据将无法修改。"
+                onConfirm={async () => {
+                  try {
+                    await archiveSemester(record.id);
+                    message.success('归档成功');
+                    fetchActiveSemester();
+                    actionRef.current?.reload();
+                  } catch {
+                    message.error('归档失败');
+                  }
+                }}
+              >
+                <Button type="link" size="small" icon={<InboxOutlined />} danger>
+                  归档
+                </Button>
+              </Popconfirm>
+            )}
+            <Button
+              type="link"
+              size="small"
+              icon={<CopyOutlined />}
+              onClick={() => {
+                setCopyId(record.id);
+                copyForm.resetFields();
+                setCopyOpen(true);
               }}
             >
-              <Button type="link" size="small" icon={<CheckCircleOutlined />}>
-                激活
-              </Button>
-            </Popconfirm>
-          )}
-          {record.status === 'finished' && (
-            <Popconfirm
-              title="确定归档该学期吗？"
-              onConfirm={async () => {
-                try {
-                  await archiveSemester(record.id);
-                  message.success('归档成功');
-                  actionRef.current?.reload();
-                } catch {
-                  message.error('归档失败');
-                }
-              }}
-            >
-              <Button type="link" size="small" icon={<InboxOutlined />}>
-                归档
-              </Button>
-            </Popconfirm>
-          )}
-          <Button
-            type="link"
-            size="small"
-            icon={<CopyOutlined />}
-            onClick={() => {
-              setCopyId(record.id);
-              copyForm.resetFields();
-              setCopyOpen(true);
-            }}
-          >
-            复制
-          </Button>
-        </Space>
-      ),
+              复制
+            </Button>
+            {record.status !== 'in_progress' && (
+              <Popconfirm
+                title="删除学期"
+                description="确定删除该学期吗？删除后该学期的所有数据（年级、班级、教师、教室、教学安排、课表等）将被永久删除，无法恢复！"
+                onConfirm={async () => {
+                  try {
+                    await deleteSemester(record.id);
+                    message.success('删除成功');
+                    fetchActiveSemester();
+                    actionRef.current?.reload();
+                  } catch {
+                    message.error('删除失败');
+                  }
+                }}
+              >
+                <Button type="link" size="small" icon={<DeleteOutlined />} danger>
+                  删除
+                </Button>
+              </Popconfirm>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 

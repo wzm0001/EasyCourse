@@ -1,4 +1,4 @@
-import { get, post, put, getPage } from '@/utils/request';
+import { get, post, put, del, getPage } from '@/utils/request';
 import type { PageRequest } from '@/api/types';
 
 export function getSemesters(params: PageRequest & Record<string, any>) {
@@ -18,13 +18,21 @@ export function updateSemester(id: string, data: any) {
 }
 
 export function activateSemester(id: string) {
-  return put<any>(`/semesters/${id}/activate`);
+  return post<any>(`/semesters/${id}/activate`);
 }
 
 export function archiveSemester(id: string) {
-  return put<any>(`/semesters/${id}/archive`);
+  return post<any>(`/semesters/${id}/archive`);
+}
+
+export function unarchiveSemester(id: string) {
+  return post<any>(`/semesters/${id}/unarchive`);
 }
 
 export function copySemester(id: string, data: any) {
   return post<any>(`/semesters/${id}/copy`, data);
+}
+
+export function deleteSemester(id: string) {
+  return del<any>(`/semesters/${id}`);
 }

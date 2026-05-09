@@ -27,7 +27,7 @@ async def get_users(
     else:
         if not current_user.school_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
-        users, total = await user_repo.get_by_school(current_user.school_id, page=page, page_size=page_size)
+        users, total = await user_repo.get_by_school(current_user.school_id, page=page, page_size=page_size, role=UserRole.TEACHER)
     items = []
     for u in users:
         school_name = None
@@ -47,6 +47,7 @@ async def get_users(
             phone=u.phone,
             email=u.email,
             is_active=u.is_active,
+            must_change_password=u.must_change_password,
             created_by=u.created_by,
         ))
     return APIResponse.success(data=PageResponse(items=items, total=total, page=page, page_size=page_size))
@@ -89,6 +90,7 @@ async def create_admin_endpoint(
         phone=admin_user.phone,
         email=admin_user.email,
         is_active=admin_user.is_active,
+        must_change_password=admin_user.must_change_password,
         created_by=admin_user.created_by,
     )
     return APIResponse.success(data=user_info)
@@ -102,10 +104,10 @@ async def create_teacher_endpoint(
 ):
     if not current_user.school_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前用户未关联学校")
-    if not validate_password_strength(request.password):
+    if len(request.password) < 6:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="密码强度不足：至少8位，需包含大小写字母和数字",
+            detail="密码至少6位",
         )
     user_repo = UserRepository(db)
     existing = await user_repo.get_by_username(request.username)
@@ -129,6 +131,7 @@ async def create_teacher_endpoint(
         phone=teacher.phone,
         email=teacher.email,
         is_active=teacher.is_active,
+        must_change_password=teacher.must_change_password,
     )
     return APIResponse.success(data=user_info)
 

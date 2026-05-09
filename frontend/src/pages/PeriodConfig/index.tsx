@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card, Select, Button, Form, InputNumber, Space, App } from 'antd';
 import { AppstoreOutlined, SaveOutlined } from '@ant-design/icons';
 import { useResponsive } from '@/hooks/useResponsive';
-import { getGrades } from '@/api/basicData';
+import { useAppStore } from '@/store/app';
+import { getGrades, updateGrade } from '@/api/basicData';
 import { getGradePeriods, setupGradePeriods, setupDayPeriods } from '@/api/periods';
 import PeriodTimeline from './PeriodTimeline';
 import TemplateSelect from './TemplateSelect';
@@ -15,35 +16,57 @@ export default function PeriodConfig({ embedded }: { embedded?: boolean } = {}) 
   const [periods, setPeriods] = useState<any[]>([]);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [form] = Form.useForm();
+  const currentSemester = useAppStore((s) => s.currentSemester);
 
   useEffect(() => {
-    getGrades({ page: 1, page_size: 100 }).then((res) => {
+    getGrades({ page: 1, page_size: 100, semester_id: currentSemester || undefined }).then((res) => {
       setGrades(res.items || []);
       if (res.items?.length > 0) {
         setSelectedGrade(res.items[0].id);
+      } else {
+        setSelectedGrade('');
       }
     });
-  }, []);
+  }, [currentSemester]);
 
   useEffect(() => {
     if (selectedGrade) {
+      const grade = grades.find((g) => g.id === selectedGrade);
+      if (grade) {
+        form.setFieldsValue({
+          morning_reading_count: grade.morning_reading_count ?? 1,
+          regular_class_count: grade.regular_class_count ?? 8,
+          evening_study_count: grade.evening_study_count ?? 0,
+        });
+      }
       getGradePeriods(selectedGrade)
         .then((res) => setPeriods(res.data || []))
         .catch(() => setPeriods([]));
     }
-  }, [selectedGrade]);
+  }, [selectedGrade, grades]);
 
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
-      await setupGradePeriods(selectedGrade, {
-        morning_count: values.morning_count,
-        class_count: values.class_count,
-        evening_count: values.evening_count,
+      await updateGrade(selectedGrade, {
+        morning_reading_count: values.morning_reading_count,
+        regular_class_count: values.regular_class_count,
+        evening_study_count: values.evening_study_count,
       });
-      message.success('保存成功');
+      await setupGradePeriods(selectedGrade, {
+        morning_count: values.morning_reading_count,
+        class_count: values.regular_class_count,
+        evening_count: values.evening_study_count,
+      });
+      message.success('课时配置保存成功');
       const res = await getGradePeriods(selectedGrade);
       setPeriods(res.data || []);
+      const updatedGrades = grades.map((g) =>
+        g.id === selectedGrade
+          ? { ...g, morning_reading_count: values.morning_reading_count, regular_class_count: values.regular_class_count, evening_study_count: values.evening_study_count }
+          : g
+      );
+      setGrades(updatedGrades);
     } catch {
       message.error('保存失败');
     }
@@ -83,15 +106,15 @@ export default function PeriodConfig({ embedded }: { embedded?: boolean } = {}) 
 
       {selectedGrade && (
         <>
-          <Card type="inner" title="节数配置" style={{ marginBottom: 24 }}>
-            <Form form={form} layout="inline" initialValues={{ morning_count: 1, class_count: 8, evening_count: 2 }}>
-              <Form.Item name="morning_count" label="早读节数">
+          <Card type="inner" title="课时配置（按年级设置）" style={{ marginBottom: 24 }}>
+            <Form form={form} layout="inline" initialValues={{ morning_reading_count: 1, regular_class_count: 8, evening_study_count: 0 }}>
+              <Form.Item name="morning_reading_count" label="早读节数">
                 <InputNumber min={0} max={3} />
               </Form.Item>
-              <Form.Item name="class_count" label="正课节数">
+              <Form.Item name="regular_class_count" label="正课节数">
                 <InputNumber min={1} max={12} />
               </Form.Item>
-              <Form.Item name="evening_count" label="晚自习节数">
+              <Form.Item name="evening_study_count" label="晚自习节数">
                 <InputNumber min={0} max={4} />
               </Form.Item>
               <Form.Item>
@@ -120,5 +143,5 @@ export default function PeriodConfig({ embedded }: { embedded?: boolean } = {}) 
     </>
   );
 
-  return embedded ? content : <Card title="时间段配置">{content}</Card>;
+  return embedded ? content : <Card title="课时配置">{content}</Card>;
 }

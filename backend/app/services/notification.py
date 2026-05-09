@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.notification import Notification, NotificationType
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.repositories.notification import NotificationRepository
 from app.schemas.notification import NotificationCreate, NotificationBatchCreate, NotificationInfo
 from app.schemas.common import PageResponse
@@ -110,6 +110,25 @@ async def send_system_maintenance(title: str, content: str, school_id: Optional[
         type=NotificationType.SYSTEM_MAINTENANCE,
         title=title,
         content=content,
+        receiver_ids=receiver_ids,
+        school_id=school_id,
+    )
+    return await create_batch_notifications(data, None, db)
+
+
+async def send_school_registration_notification(school_name: str, school_id: str, db: AsyncSession) -> list[Notification]:
+    from sqlalchemy import select
+    query_result = await db.execute(
+        select(User).where(User.role == UserRole.SUPER_ADMIN, User.is_active == True)
+    )
+    super_admins = list(query_result.scalars().all())
+    if not super_admins:
+        return []
+    receiver_ids = [u.id for u in super_admins]
+    data = NotificationBatchCreate(
+        type=NotificationType.SCHOOL_REGISTRATION,
+        title="新学校注册申请",
+        content=f"学校「{school_name}」提交了注册申请，请前往审批管理进行处理。",
         receiver_ids=receiver_ids,
         school_id=school_id,
     )

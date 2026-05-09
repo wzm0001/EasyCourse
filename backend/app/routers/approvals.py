@@ -6,7 +6,6 @@ from app.models.user import User, UserRole
 from app.schemas.common import APIResponse, PageResponse
 from app.schemas.user import ApprovalInfo, ApprovalAction
 from app.repositories.user import ApprovalRepository
-from app.services.user import approve_data_change, reject_data_change
 from app.middleware.auth import require_super_admin, get_current_user_dependency
 
 router = APIRouter(prefix="/approvals", tags=["审批管理"])
@@ -75,9 +74,25 @@ async def approve_approval(
     current_user: User = Depends(require_super_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    record = await approve_data_change(approval_id, current_user.id, db)
+    from app.repositories.user import ApprovalRepository
+    from app.services.user import approve_school, approve_data_change
+    from app.services.notification import send_approval_result
+
+    approval_repo = ApprovalRepository(db)
+    record = await approval_repo.get_by_id(approval_id)
     if record is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="审批记录不存在")
+    if record.status != "pending":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="该审批已经处理")
+
+    if record.type == "school_registration":
+        await approve_school(record.school_id, current_user.id, db)
+        approval_repo = ApprovalRepository(db)
+        await approval_repo.update(approval_id, {"status": "approved", "reviewer_id": current_user.id})
+    else:
+        await approve_data_change(approval_id, current_user.id, db)
+
+    await send_approval_result(approval_id, True, None, db)
     return APIResponse.success(message="审批已通过")
 
 
@@ -88,7 +103,23 @@ async def reject_approval(
     current_user: User = Depends(require_super_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    record = await reject_data_change(approval_id, current_user.id, request.reject_reason or "", db)
+    from app.repositories.user import ApprovalRepository
+    from app.services.user import reject_school, reject_data_change
+    from app.services.notification import send_approval_result
+
+    approval_repo = ApprovalRepository(db)
+    record = await approval_repo.get_by_id(approval_id)
     if record is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="审批记录不存在")
+    if record.status != "pending":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="该审批已经处理")
+
+    if record.type == "school_registration":
+        await reject_school(record.school_id, current_user.id, request.reject_reason or "", db)
+        approval_repo = ApprovalRepository(db)
+        await approval_repo.update(approval_id, {"status": "rejected", "reviewer_id": current_user.id, "reject_reason": request.reject_reason or ""})
+    else:
+        await reject_data_change(approval_id, current_user.id, request.reject_reason or "", db)
+
+    await send_approval_result(approval_id, False, request.reject_reason, db)
     return APIResponse.success(message="审批已拒绝")

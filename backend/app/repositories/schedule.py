@@ -63,24 +63,12 @@ class ScheduleCellRepository(BaseRepository[ScheduleCell]):
         query = delete(ScheduleCell).where(
             ScheduleCell.school_id == school_id,
             ScheduleCell.semester_id == semester_id,
-            ScheduleCell.is_fixed == False,
         )
         if grade_id:
             query = query.where(ScheduleCell.grade_id == grade_id)
         result = await self.session.execute(query)
         await self.session.flush()
         return result.rowcount
-
-    async def get_fixed_cells(self, school_id: str, semester_id: str, grade_id: Optional[str] = None) -> List[ScheduleCell]:
-        query = select(ScheduleCell).where(
-            ScheduleCell.school_id == school_id,
-            ScheduleCell.semester_id == semester_id,
-            ScheduleCell.is_fixed == True,
-        )
-        if grade_id:
-            query = query.where(ScheduleCell.grade_id == grade_id)
-        result = await self.session.execute(query)
-        return list(result.scalars().all())
 
     async def get_by_grade_semester(self, grade_id: str, semester_id: str) -> List[ScheduleCell]:
         result = await self.session.execute(

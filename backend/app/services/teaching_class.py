@@ -44,7 +44,7 @@ async def _build_teaching_class_info(tc: TeachingClass, db: AsyncSession) -> Tea
         teacher_id=tc.teacher_id,
         teacher_name=teacher.name if teacher else None,
         classroom_id=tc.classroom_id,
-        classroom_name=classroom.name if classroom else None,
+        classroom_name=f"{classroom.building_name} {classroom.room_number}" if classroom else None,
         description=tc.description,
         members=member_infos,
         created_at=tc.created_at,

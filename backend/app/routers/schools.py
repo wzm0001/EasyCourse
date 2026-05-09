@@ -8,7 +8,7 @@ from typing import List
 from app.database import get_db
 from app.models.user import User, UserRole, AccountStatus, School
 from app.schemas.common import APIResponse, PageResponse
-from app.schemas.user import SchoolInfo, SchoolUpdate, ApprovalAction, SchoolDetailInfo
+from app.schemas.user import SchoolInfo, SchoolUpdate, ApprovalAction, SchoolDetailInfo, SchoolCreate
 from app.repositories.user import SchoolRepository, UserRepository, ApprovalRepository
 from app.services.user import approve_school, reject_school, request_data_change
 from app.services.auth import get_password_hash

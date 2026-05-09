@@ -24,27 +24,39 @@ export function placeCell(data: any) {
   return post<any>('/schedules/place', data);
 }
 
+export function dragDropCell(data: any) {
+  return post<any>('/schedules/drag-drop', data);
+}
+
+export function moveCell(data: { cell_id: string; target_day_of_week: number; target_period_type: string; target_period_index: number }) {
+  return post<any>('/schedules/move', data);
+}
+
+export function checkConflicts(data: any) {
+  return post<any>('/schedules/conflict-check', data);
+}
+
 export function removeCell(cellId: string) {
-  return del<any>(`/schedules/cell/${cellId}`);
+  return del<any>(`/schedules/cells/${cellId}`);
 }
 
-export function fixCell(cellId: string) {
-  return put<any>(`/schedules/cell/${cellId}/fix`);
+export function lockCell(cellId: string) {
+  return post<any>(`/schedules/cells/${cellId}/lock`);
 }
 
-export function unfixCell(cellId: string) {
-  return put<any>(`/schedules/cell/${cellId}/unfix`);
+export function unlockCell(cellId: string) {
+  return post<any>(`/schedules/cells/${cellId}/unlock`);
 }
 
 export function swapCells(data: { cell_id_1: string; cell_id_2: string }) {
   return post<any>('/schedules/swap', data);
 }
 
-export function autoSchedule(data: { semester_id: string; grade_id?: string }) {
+export function autoSchedule(data: { semester_id: string; grade_id?: string; keep_locked?: boolean }) {
   return post<any>('/schedules/auto', data);
 }
 
-export function clearSchedule(data: { semester_id: string; grade_id?: string }) {
+export function clearSchedule(data: { semester_id: string; grade_id?: string; keep_locked?: boolean }) {
   return post<any>('/schedules/clear', data);
 }
 

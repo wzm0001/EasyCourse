@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Form, Input, Button, Card, App, Checkbox, Modal, Steps, Row, Col, Upload } from 'antd';
 import { UserOutlined, LockOutlined, BankOutlined, PhoneOutlined, EnvironmentOutlined, KeyOutlined, UploadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +13,11 @@ export default function Login() {
   const { message, modal } = App.useApp();
   const { isMobile } = useResponsive();
   const [form] = Form.useForm<LoginRequest>();
+
+  useEffect(() => {
+    document.title = '中小学走班排课系统';
+  }, []);
+
   const [loginLoading, setLoginLoading] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);

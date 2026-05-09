@@ -16,19 +16,16 @@ export default function CourseTab() {
 
   const columns: ProColumns<any>[] = [
     { title: '课程名称', dataIndex: 'name', width: 180 },
-    { title: '课程编码', dataIndex: 'code', width: 120 },
     {
       title: '课程类型',
-      dataIndex: 'type',
+      dataIndex: 'course_type',
       width: 100,
       valueEnum: {
         required: { text: '必修' },
         elective: { text: '选修' },
-        activity: { text: '活动' },
       },
     },
     { title: '周课时', dataIndex: 'weekly_hours', width: 80, search: false },
-    { title: '课时长度', dataIndex: 'duration', width: 80, search: false },
     {
       title: '操作',
       valueType: 'option',
@@ -50,7 +47,7 @@ export default function CourseTab() {
         columns={columns}
         actionRef={actionRef}
         request={async (params) => {
-          const result = await getCourses({ page: params.current || 1, page_size: params.pageSize || 10, name: params.name, type: params.type });
+          const result = await getCourses({ page: params.current || 1, page_size: params.pageSize || 10, name: params.name, course_type: params.course_type });
           return { data: result.items, total: result.total, success: true };
         }}
         rowKey="id"
@@ -75,14 +72,13 @@ export default function CourseTab() {
         destroyOnHidden
         width={isMobile ? '90vw' : 520}
       >
-        <Form form={form} layout="vertical">
-          <Form.Item name="name" label="课程名称" rules={[{ required: true, message: '请输入课程名称' }]}><Input /></Form.Item>
-          <Form.Item name="code" label="课程编码" rules={[{ required: true, message: '请输入课程编码' }]}><Input /></Form.Item>
-          <Form.Item name="type" label="课程类型" rules={[{ required: true, message: '请选择课程类型' }]}>
-            <Select options={[{ label: '必修', value: 'required' }, { label: '选修', value: 'elective' }, { label: '活动', value: 'activity' }]} />
+        <Form form={form} layout="vertical" initialValues={{ course_type: 'required', weekly_hours: 1 }}>
+          <Form.Item name="name" label="课程名称" rules={[{ required: true, message: '请输入课程名称' }]}><Input placeholder="如：语文、数学" /></Form.Item>
+          <Form.Item name="code" label="课程编码"><Input placeholder="选填" /></Form.Item>
+          <Form.Item name="course_type" label="课程类型">
+            <Select options={[{ label: '必修', value: 'required' }, { label: '选修', value: 'elective' }]} />
           </Form.Item>
           <Form.Item name="weekly_hours" label="周课时"><InputNumber min={1} max={20} style={{ width: '100%' }} /></Form.Item>
-          <Form.Item name="duration" label="课时长度(分钟)"><InputNumber min={20} max={120} style={{ width: '100%' }} /></Form.Item>
         </Form>
       </Modal>
     </>

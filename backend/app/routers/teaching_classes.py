@@ -9,6 +9,7 @@ from app.schemas.common import APIResponse, PageResponse
 from app.schemas.teaching_class import TeachingClassCreate, TeachingClassUpdate, TeachingClassInfo
 from app.services import teaching_class as tc_service
 from app.middleware.auth import get_current_user_dependency
+from app.utils.semester_guard import check_semester_writable
 
 router = APIRouter(prefix="/teaching-classes", tags=["走班教学班"])
 
@@ -43,6 +44,7 @@ async def create_teaching_class(
     db: AsyncSession = Depends(get_db),
 ):
     school_id = await _get_school_id(current_user)
+    await check_semester_writable(db, semester_id)
     result = await tc_service.create_teaching_class(data, school_id, semester_id, db)
     return APIResponse.success(data=result)
 
@@ -66,6 +68,12 @@ async def update_teaching_class(
     current_user: User = Depends(get_current_user_dependency),
     db: AsyncSession = Depends(get_db),
 ):
+    from app.repositories.teaching_class import TeachingClassRepository
+    tc_repo = TeachingClassRepository(db)
+    tc = await tc_repo.get_by_id(id)
+    if not tc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="教学班不存在")
+    await check_semester_writable(db, tc.semester_id)
     result = await tc_service.update_teaching_class(id, data, db)
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="教学班不存在")
@@ -78,6 +86,12 @@ async def delete_teaching_class(
     current_user: User = Depends(get_current_user_dependency),
     db: AsyncSession = Depends(get_db),
 ):
+    from app.repositories.teaching_class import TeachingClassRepository
+    tc_repo = TeachingClassRepository(db)
+    tc = await tc_repo.get_by_id(id)
+    if not tc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="教学班不存在")
+    await check_semester_writable(db, tc.semester_id)
     deleted = await tc_service.delete_teaching_class(id, db)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="教学班不存在")

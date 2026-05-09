@@ -1,4 +1,4 @@
-import { Layout, Dropdown, Switch, Breadcrumb, Badge, Avatar, Space } from 'antd';
+import { Layout, Dropdown, Switch, Breadcrumb, Badge, Avatar, Space, Tag, Tooltip } from 'antd';
 import {
   BellOutlined,
   UserOutlined,
@@ -9,6 +9,7 @@ import {
   SunOutlined,
   MoonOutlined,
   MenuOutlined,
+  LockOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
@@ -43,7 +44,7 @@ export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const { theme, toggleTheme, sidebarCollapsed, toggleSidebar, setMobileDrawerOpen, unreadCount } = useAppStore();
+  const { theme, toggleTheme, sidebarCollapsed, toggleSidebar, setMobileDrawerOpen, unreadCount, currentSemesterName, currentSemesterArchived } = useAppStore();
   const { isMobile } = useResponsive();
 
   const pathSnippets = location.pathname.split('/').filter((i) => i);
@@ -117,6 +118,15 @@ export default function Header() {
       </Space>
 
       <Space size={isMobile ? 'small' : 'middle'}>
+        {currentSemesterName && (
+          currentSemesterArchived ? (
+            <Tooltip title="当前学期已归档，数据为只读状态">
+              <Tag color="red" icon={<LockOutlined />}>{currentSemesterName} (已归档)</Tag>
+            </Tooltip>
+          ) : (
+            <Tag color="blue">{currentSemesterName}</Tag>
+          )
+        )}
         <Badge count={unreadCount} onClick={() => navigate('/notifications')} style={{ cursor: 'pointer' }}>
           <BellOutlined style={{ fontSize: isMobile ? 20 : 18, cursor: 'pointer', padding: '4px' }} />
         </Badge>

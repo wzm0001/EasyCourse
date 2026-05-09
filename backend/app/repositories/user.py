@@ -16,15 +16,19 @@ class UserRepository(BaseRepository[User]):
         )
         return result.scalar_one_or_none()
 
-    async def get_by_school(self, school_id: str, page: int = 1, page_size: int = 20) -> tuple[List[User], int]:
+    async def get_by_school(self, school_id: str, page: int = 1, page_size: int = 20, role: Optional[str] = None) -> tuple[List[User], int]:
         from sqlalchemy import func
+        from app.models.user import UserRole
+        conditions = [User.school_id == school_id]
+        if role:
+            conditions.append(User.role == role)
         count_result = await self.session.execute(
-            select(func.count()).select_from(User).where(User.school_id == school_id)
+            select(func.count()).select_from(User).where(*conditions)
         )
         total = count_result.scalar_one()
         offset = (page - 1) * page_size
         result = await self.session.execute(
-            select(User).where(User.school_id == school_id).offset(offset).limit(page_size)
+            select(User).where(*conditions).offset(offset).limit(page_size)
         )
         items = list(result.scalars().all())
         return items, total

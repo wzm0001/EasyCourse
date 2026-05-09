@@ -21,6 +21,10 @@ export default function ClassroomTab() {
   const currentSemester = useAppStore((s) => s.currentSemester);
 
   useEffect(() => {
+    actionRef.current?.reload();
+  }, [currentSemester]);
+
+  useEffect(() => {
     getCourses({ page: 1, page_size: 200 }).then((res) => setAllCourses(res.items || []));
   }, []);
 
@@ -28,7 +32,7 @@ export default function ClassroomTab() {
     setClassroomId(record.id);
     try {
       const res = await getClassroomCourses(record.id);
-      const ids = (res.data || []).map((c: any) => c.id || c.course_id);
+      const ids = (res.data || []).map((c: any) => c.course_id);
       setSelectedCourseKeys(ids);
     } catch {
       setSelectedCourseKeys([]);
@@ -37,11 +41,19 @@ export default function ClassroomTab() {
   };
 
   const columns: ProColumns<any>[] = [
-    { title: '教室名称', dataIndex: 'name', width: 180 },
-    { title: '教室编码', dataIndex: 'code', width: 120 },
+    {
+      title: '教室',
+      dataIndex: 'display_name',
+      width: 200,
+      search: false,
+      render: (_, record) => `${record.building_name} ${record.room_number}`,
+    },
+    { title: '教学楼', dataIndex: 'building_name', width: 150 },
+    { title: '教室编号', dataIndex: 'room_number', width: 120 },
+    { title: '系统编码', dataIndex: 'code', width: 130, search: false },
     {
       title: '教室类型',
-      dataIndex: 'type',
+      dataIndex: 'room_type',
       width: 100,
       valueEnum: {
         normal: { text: '普通教室' },
@@ -86,7 +98,7 @@ export default function ClassroomTab() {
         columns={columns}
         actionRef={actionRef}
         request={async (params) => {
-          const result = await getClassrooms({ page: params.current || 1, page_size: params.pageSize || 10, name: params.name, type: params.type, semester_id: currentSemester || undefined });
+          const result = await getClassrooms({ page: params.current || 1, page_size: params.pageSize || 10, building_name: params.building_name, room_type: params.room_type, semester_id: currentSemester || undefined });
           return { data: result.items, total: result.total, success: true };
         }}
         rowKey="id"
@@ -104,7 +116,7 @@ export default function ClassroomTab() {
           try {
             const values = await form.validateFields();
             if (editData) { await updateClassroom(editData.id, values); message.success('更新成功'); }
-            else { await createClassroom({ ...values, semester_id: currentSemester }); message.success('创建成功'); }
+            else { await createClassroom(values, currentSemester || undefined); message.success('创建成功'); }
             actionRef.current?.reload(); setFormOpen(false); setEditData(null);
           } catch { message.error('操作失败'); }
         }}
@@ -112,12 +124,21 @@ export default function ClassroomTab() {
         width={isMobile ? '90vw' : 520}
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="name" label="教室名称" rules={[{ required: true, message: '请输入教室名称' }]}><Input /></Form.Item>
-          <Form.Item name="code" label="教室编码" rules={[{ required: true, message: '请输入教室编码' }]}><Input /></Form.Item>
-          <Form.Item name="type" label="教室类型" rules={[{ required: true, message: '请选择教室类型' }]}>
+          <Form.Item name="building_name" label="教学楼名称" rules={[{ required: true, message: '请输入教学楼名称' }]}>
+            <Input placeholder="如：明德楼、博学楼" />
+          </Form.Item>
+          <Form.Item name="room_number" label="教室编号" rules={[{ required: true, message: '请输入教室编号' }]}>
+            <Input placeholder="如：101、A201" />
+          </Form.Item>
+          <Form.Item name="room_type" label="教室类型" rules={[{ required: true, message: '请选择教室类型' }]}>
             <Select options={[{ label: '普通教室', value: 'normal' }, { label: '实验室', value: 'lab' }, { label: '机房', value: 'computer' }, { label: '音乐教室', value: 'music' }, { label: '美术教室', value: 'art' }, { label: '体育馆', value: 'gym' }]} />
           </Form.Item>
           <Form.Item name="capacity" label="容量"><InputNumber min={1} max={500} style={{ width: '100%' }} /></Form.Item>
+          {editData && (
+            <Form.Item label="系统编码">
+              <Input value={editData.code} disabled />
+            </Form.Item>
+          )}
         </Form>
       </Modal>
       <Modal

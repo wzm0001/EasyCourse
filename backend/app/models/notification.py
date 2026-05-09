@@ -5,6 +5,7 @@ from app.models.base import BaseModel
 
 
 class NotificationType(str, enum.Enum):
+    SCHOOL_REGISTRATION = "school_registration"
     APPROVAL_RESULT = "approval_result"
     SCHEDULE_COMPLETE = "schedule_complete"
     SYSTEM_MAINTENANCE = "system_maintenance"

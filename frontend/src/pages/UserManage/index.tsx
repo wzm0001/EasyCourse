@@ -3,10 +3,13 @@ import { PlusOutlined, EditOutlined, KeyOutlined, StopOutlined } from '@ant-desi
 import { ProTable } from '@ant-design/pro-components';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { useState, useRef } from 'react';
-import { getUsers, createAdmin, createTeacher, updateUser, resetPassword, toggleUserStatus } from '@/api/users';
+import { getUsers, createAdmin, updateUser, resetPassword, toggleUserStatus } from '@/api/users';
+import { createTeacher as createTeacherBasic } from '@/api/basicData';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useAuthStore } from '@/store/auth';
+import { useAppStore } from '@/store/app';
 import { getMe } from '@/api/auth';
+import TeacherForm from '@/components/TeacherForm';
 
 const DEFAULT_PASSWORD = 'Admin@123';
 
@@ -17,6 +20,7 @@ export default function UserManage() {
   const refreshUser = useAuthStore((s) => s.refreshUser);
   const isSuperAdmin = user?.role === 'super_admin';
   const schoolName = user?.school_name || '';
+  const currentSemester = useAppStore((s) => s.currentSemester);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<any>(null);
@@ -244,14 +248,16 @@ export default function UserManage() {
               await createAdmin(values);
               message.success('创建成功');
             } else {
-              await createTeacher({
-                username: values.username,
-                real_name: values.username,
+              await createTeacherBasic({
+                name: values.name,
                 phone: values.phone,
+                gender: values.gender || '',
+                employee_id: values.employee_id || '',
+                teaching_group: values.teaching_group || '',
+                specialization: values.specialization || '',
                 email: values.email || '',
-                password: DEFAULT_PASSWORD,
-              });
-              message.success(`教师添加成功，默认密码为 ${DEFAULT_PASSWORD}`);
+              }, currentSemester || undefined);
+              message.success('教师添加成功，默认密码为手机号');
             }
             actionRef.current?.reload();
             setFormOpen(false);
@@ -295,25 +301,7 @@ export default function UserManage() {
               </Form.Item>
             </>
           ) : (
-            <>
-              <Form.Item name="username" label="教师姓名" rules={[{ required: true, message: '请输入教师姓名' }]} extra="教师姓名将作为登录用户名">
-                <Input placeholder="请输入教师姓名" />
-              </Form.Item>
-              <Form.Item label="学校名称">
-                <Input value={schoolName} disabled />
-              </Form.Item>
-              <Form.Item name="phone" label="手机号" rules={[{ required: true, message: '请输入手机号' }, { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号' }]}>
-                <Input placeholder="请输入手机号" />
-              </Form.Item>
-              <Form.Item name="email" label="邮箱">
-                <Input placeholder="请输入邮箱（可选）" />
-              </Form.Item>
-              {!editData && (
-                <div style={{ color: '#999', fontSize: 12, marginTop: -8, marginBottom: 16 }}>
-                  添加后默认密码为 {DEFAULT_PASSWORD}
-                </div>
-              )}
-            </>
+            <TeacherForm form={form} showSchoolName={schoolName} showPasswordHint={!editData} />
           )}
         </Form>
       </Modal>

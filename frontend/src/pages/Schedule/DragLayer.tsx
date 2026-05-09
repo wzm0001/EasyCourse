@@ -41,7 +41,11 @@ export default function DragLayer() {
             border: '1px solid #1677ff',
             borderRadius: 4,
             opacity: 0.8,
-            minWidth: 120,
+            width: 'fit-content',
+            maxWidth: 160,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}
         >
           <div style={{ fontSize: 13, fontWeight: 500 }}>{item.cell.course_name}</div>

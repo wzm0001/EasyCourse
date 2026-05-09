@@ -27,18 +27,41 @@ export default function Export({ embedded }: { embedded?: boolean } = {}) {
       const active = res.items?.find((s: any) => s.status === 'in_progress');
       if (active) setSelectedSemester(active.id);
     });
-    getGrades({ page: 1, page_size: 100 }).then((res) => setGrades(res.items || []));
-    getTeachers({ page: 1, page_size: 200 }).then((res) => setTeachers(res.items || []));
   }, []);
 
   useEffect(() => {
-    if (selectedGrade) {
-      getClasses({ page: 1, page_size: 200, grade_id: selectedGrade }).then((res) => {
+    if (selectedSemester) {
+      getGrades({ page: 1, page_size: 100, semester_id: selectedSemester }).then((res) => {
+        setGrades(res.items || []);
+        setSelectedGrade('');
+        setSelectedTarget('');
+        setClasses([]);
+      });
+      getTeachers({ page: 1, page_size: 200, semester_id: selectedSemester }).then((res) => {
+        setTeachers(res.items || []);
+        setSelectedTarget('');
+      });
+    } else {
+      setGrades([]);
+      setTeachers([]);
+      setSelectedGrade('');
+      setSelectedTarget('');
+      setClasses([]);
+    }
+  }, [selectedSemester]);
+
+  useEffect(() => {
+    if (selectedGrade && selectedSemester) {
+      getClasses({ page: 1, page_size: 200, grade_id: selectedGrade, semester_id: selectedSemester }).then((res) => {
         setClasses(res.items || []);
         if (res.items?.length > 0) setSelectedTarget(res.items[0].id);
+        else setSelectedTarget('');
       });
+    } else {
+      setClasses([]);
+      setSelectedTarget('');
     }
-  }, [selectedGrade]);
+  }, [selectedGrade, selectedSemester]);
 
   useEffect(() => {
     if (exportType === 'teacher' && teachers.length > 0) {
@@ -121,7 +144,7 @@ export default function Export({ embedded }: { embedded?: boolean } = {}) {
             style={{ width: 200 }}
             value={selectedTarget}
             onChange={setSelectedTarget}
-            options={exportType === 'class' ? classes.map((c) => ({ label: c.name, value: c.id })) : teachers.map((t) => ({ label: t.real_name, value: t.id }))}
+            options={exportType === 'class' ? classes.map((c) => ({ label: c.name, value: c.id })) : teachers.map((t) => ({ label: t.name, value: t.id }))}
             placeholder={exportType === 'class' ? '请选择班级' : '请选择教师'}
           />
         </Space>

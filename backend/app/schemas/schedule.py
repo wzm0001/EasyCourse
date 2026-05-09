@@ -11,14 +11,14 @@ class ScheduleCellCreate(BaseModel):
     course_id: Optional[str] = None
     teacher_id: Optional[str] = None
     classroom_id: Optional[str] = None
-    is_fixed: bool = False
+    is_locked: bool = False
 
 
 class ScheduleCellUpdate(BaseModel):
     course_id: Optional[str] = None
     teacher_id: Optional[str] = None
     classroom_id: Optional[str] = None
-    is_fixed: Optional[bool] = None
+    is_locked: Optional[bool] = None
 
 
 class ScheduleCellInfo(BaseModel):
@@ -36,15 +36,45 @@ class ScheduleCellInfo(BaseModel):
     teacher_name: Optional[str] = None
     classroom_id: Optional[str] = None
     classroom_name: Optional[str] = None
-    is_fixed: bool
+    class_name: Optional[str] = None
+    is_locked: bool
+    has_conflict: bool = False
+    conflict_reasons: List[str] = []
 
     model_config = {"from_attributes": True}
+
+
+class DragDropRequest(BaseModel):
+    teacher_id: str
+    course_id: Optional[str] = None
+    target_class_id: str
+    target_day_of_week: int
+    target_period_type: str
+    target_period_index: int
+
+
+class CellMoveRequest(BaseModel):
+    cell_id: str
+    target_day_of_week: int
+    target_period_type: str
+    target_period_index: int
+
+
+class ConflictCheckRequest(BaseModel):
+    teacher_id: Optional[str] = None
+    classroom_id: Optional[str] = None
+    class_id: Optional[str] = None
+    day_of_week: int
+    period_type: str
+    period_index: int
+    exclude_cell_id: Optional[str] = None
 
 
 class ScheduleGrid(BaseModel):
     class_id: str
     class_name: Optional[str] = None
     cells: List[ScheduleCellInfo]
+    conflicts: List[ConflictInfo] = []
 
 
 class ConflictInfo(BaseModel):
@@ -57,6 +87,7 @@ class ConflictInfo(BaseModel):
 class AutoScheduleRequest(BaseModel):
     semester_id: str
     grade_id: Optional[str] = None
+    keep_locked: bool = True
 
 
 class AutoScheduleResult(BaseModel):
@@ -85,3 +116,4 @@ class ScheduleLockInfo(BaseModel):
 class ClearScheduleRequest(BaseModel):
     semester_id: str
     grade_id: Optional[str] = None
+    keep_locked: bool = True

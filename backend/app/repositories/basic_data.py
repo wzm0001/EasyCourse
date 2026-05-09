@@ -94,10 +94,11 @@ class GradeCourseRepository(BaseRepository[GradeCourse]):
     def __init__(self, session: AsyncSession):
         super().__init__(GradeCourse, session)
 
-    async def get_by_grade(self, grade_id: str) -> List[GradeCourse]:
-        result = await self.session.execute(
-            select(GradeCourse).where(GradeCourse.grade_id == grade_id)
-        )
+    async def get_by_grade(self, grade_id: str, period_type: Optional[str] = None) -> List[GradeCourse]:
+        stmt = select(GradeCourse).where(GradeCourse.grade_id == grade_id)
+        if period_type:
+            stmt = stmt.where(GradeCourse.period_type == period_type)
+        result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
     async def get_by_semester(self, school_id: str, semester_id: str) -> List[GradeCourse]:
@@ -166,20 +167,22 @@ class ClassroomRepository(BaseRepository[Classroom]):
     def __init__(self, session: AsyncSession):
         super().__init__(Classroom, session)
 
-    async def get_by_semester(self, school_id: str, semester_id: str, page: int = 1, page_size: int = 20) -> tuple[List[Classroom], int]:
+    async def get_by_semester(self, school_id: str, semester_id: str, page: int = 1, page_size: int = 20, building_name: Optional[str] = None, room_type: Optional[str] = None) -> tuple[List[Classroom], int]:
+        conditions = [
+            Classroom.school_id == school_id,
+            Classroom.semester_id == semester_id,
+        ]
+        if building_name:
+            conditions.append(Classroom.building_name.like(f"%{building_name}%"))
+        if room_type:
+            conditions.append(Classroom.room_type == room_type)
         count_result = await self.session.execute(
-            select(func.count()).select_from(Classroom).where(
-                Classroom.school_id == school_id,
-                Classroom.semester_id == semester_id,
-            )
+            select(func.count()).select_from(Classroom).where(*conditions)
         )
         total = count_result.scalar_one()
         offset = (page - 1) * page_size
         result = await self.session.execute(
-            select(Classroom).where(
-                Classroom.school_id == school_id,
-                Classroom.semester_id == semester_id,
-            ).offset(offset).limit(page_size)
+            select(Classroom).where(*conditions).offset(offset).limit(page_size)
         )
         items = list(result.scalars().all())
         return items, total
@@ -240,6 +243,15 @@ class TeachingArrangementRepository(BaseRepository[TeachingArrangement]):
     async def get_by_teacher(self, teacher_id: str) -> List[TeachingArrangement]:
         result = await self.session.execute(
             select(TeachingArrangement).where(TeachingArrangement.teacher_id == teacher_id)
+        )
+        return list(result.scalars().all())
+
+    async def get_by_teacher_and_semester(self, teacher_id: str, semester_id: str) -> List[TeachingArrangement]:
+        result = await self.session.execute(
+            select(TeachingArrangement).where(
+                TeachingArrangement.teacher_id == teacher_id,
+                TeachingArrangement.semester_id == semester_id,
+            )
         )
         return list(result.scalars().all())
 

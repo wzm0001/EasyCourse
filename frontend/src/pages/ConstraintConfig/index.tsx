@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Card, Button, Space, App, Popconfirm, Switch } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { ProTable } from '@ant-design/pro-components';
@@ -6,6 +6,7 @@ import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { getConstraints, createConstraint, updateConstraint, deleteConstraint, toggleConstraint } from '@/api/constraints';
 import ConstraintForm from './ConstraintForm';
 import { useResponsive } from '@/hooks/useResponsive';
+import { useAppStore } from '@/store/app';
 
 const typeLabels: Record<string, string> = {
   teacher_unavailable: '教师不可排课时段',
@@ -24,6 +25,11 @@ export default function ConstraintConfig({ embedded }: { embedded?: boolean } = 
   const [editData, setEditData] = useState<any>(null);
   const { message } = App.useApp();
   const { isMobile } = useResponsive();
+  const currentSemester = useAppStore((s) => s.currentSemester);
+
+  useEffect(() => {
+    actionRef.current?.reload();
+  }, [currentSemester]);
 
   const columns: ProColumns<any>[] = [
     { title: '约束名称', dataIndex: 'name', width: 200, ellipsis: true },
@@ -77,7 +83,7 @@ export default function ConstraintConfig({ embedded }: { embedded?: boolean } = 
         columns={columns}
         actionRef={actionRef}
         request={async (params) => {
-          const result = await getConstraints({ page: params.current || 1, page_size: params.pageSize || 10, name: params.name, type: params.type });
+          const result = await getConstraints({ page: params.current || 1, page_size: params.pageSize || 10, name: params.name, type: params.type, semester_id: currentSemester || undefined });
           return { data: result.items, total: result.total, success: true };
         }}
         rowKey="id"
@@ -98,7 +104,7 @@ export default function ConstraintConfig({ embedded }: { embedded?: boolean } = 
               await updateConstraint(editData.id, values);
               message.success('更新成功');
             } else {
-              await createConstraint(values);
+              await createConstraint(values, currentSemester || undefined);
               message.success('创建成功');
             }
             actionRef.current?.reload();

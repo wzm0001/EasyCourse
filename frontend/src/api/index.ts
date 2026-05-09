@@ -62,12 +62,18 @@ api.interceptors.response.use(
         }
         break;
       case 403:
-        msg.error('没有权限访问');
+        msg.error(getErrMsg() || '没有权限访问');
         break;
       case 404:
         break;
       case 422:
         msg.error(getErrMsg());
+        break;
+      case 429:
+        if (error.config?.url?.includes('/conflict-check')) {
+          break;
+        }
+        msg.error(getErrMsg() || '请求过于频繁，请稍后再试');
         break;
       case 500:
         msg.error('服务器错误，请稍后重试');

@@ -47,6 +47,7 @@ class User(BaseModel):
     phone: Mapped[str] = mapped_column(String(20), default="")
     email: Mapped[str] = mapped_column(String(200), default="")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    must_change_password: Mapped[bool] = mapped_column(Boolean, default=False)
     current_token: Mapped[str] = mapped_column(String(500), default="")
     created_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
 
